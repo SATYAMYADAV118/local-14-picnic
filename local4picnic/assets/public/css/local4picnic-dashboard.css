@@ -1,0 +1,529 @@
+.local4picnic-dashboard {
+    background: linear-gradient(135deg, #fef3c7 0%, #fce7f3 100%);
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: 0 30px 60px -25px rgba(15, 23, 42, 0.25);
+    color: #1f2937;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.local4picnic-dashboard__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.local4picnic-dashboard__brand {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.local4picnic-dashboard__logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    font-size: 2rem;
+    border-radius: 20px;
+    background: rgba(249, 115, 22, 0.15);
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.45);
+}
+
+.local4picnic-dashboard__brand h2 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.8rem;
+}
+
+.local4picnic-dashboard__brand p {
+    margin: 0.25rem 0 0;
+    color: rgba(15, 23, 42, 0.7);
+}
+
+.local4picnic-dashboard__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.local4picnic-dashboard__nav button {
+    border: none;
+    background: rgba(255, 255, 255, 0.45);
+    color: #1f2937;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.local4picnic-dashboard__nav button.is-active,
+.local4picnic-dashboard__nav button:hover {
+    background: #1f2937;
+    color: #fefce8;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 25px -15px rgba(15, 23, 42, 0.6);
+}
+
+.local4picnic-dashboard__panels {
+    background: rgba(255, 255, 255, 0.65);
+    border-radius: 20px;
+    padding: 2rem;
+    backdrop-filter: blur(16px);
+}
+
+.local4picnic-panel {
+    display: none;
+}
+
+.local4picnic-panel.is-active {
+    display: block;
+}
+
+.local4picnic-panel__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.local4picnic-panel__header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.local4picnic-panel__header p {
+    margin: 0.35rem 0 0;
+    color: rgba(15, 23, 42, 0.7);
+}
+
+.local4picnic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+}
+
+.local4picnic-card {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 18px;
+    padding: 1.5rem;
+    box-shadow: 0 12px 30px -20px rgba(15, 23, 42, 0.35);
+    position: relative;
+    overflow: hidden;
+}
+
+.local4picnic-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right, rgba(251, 191, 36, 0.25), transparent 50%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.local4picnic-card:hover::after {
+    opacity: 1;
+}
+
+.local4picnic-card header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.local4picnic-card header p {
+    margin: 0.4rem 0 1rem;
+    color: rgba(15, 23, 42, 0.6);
+}
+
+.local4picnic-tasklist,
+.local4picnic-notificationlist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.local4picnic-tasklist li,
+.local4picnic-notificationlist li {
+    background: rgba(15, 23, 42, 0.06);
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.local4picnic-tasklist li strong {
+    font-size: 0.95rem;
+}
+
+.local4picnic-task-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    background: rgba(79, 70, 229, 0.15);
+    color: #4338ca;
+    font-weight: 600;
+}
+
+.local4picnic-task-status[data-status="completed"] {
+    background: rgba(16, 185, 129, 0.15);
+    color: #047857;
+}
+
+.local4picnic-task-status[data-status="in_progress"] {
+    background: rgba(234, 179, 8, 0.2);
+    color: #b45309;
+}
+
+.local4picnic-pie {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    display: grid;
+    place-items: center;
+    font-weight: 600;
+    color: rgba(15, 23, 42, 0.65);
+    background: rgba(15, 23, 42, 0.08);
+    position: relative;
+}
+
+.local4picnic-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.local4picnic-legend li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.local4picnic-legend span {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+}
+
+.local4picnic-button {
+    border: none;
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 20px 40px -20px rgba(249, 115, 22, 0.7);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.local4picnic-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 45px -18px rgba(249, 115, 22, 0.65);
+}
+
+.local4picnic-taskboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.local4picnic-taskcolumn {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 18px;
+    padding: 1rem;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
+    min-height: 260px;
+}
+
+.local4picnic-taskcolumn h4 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+}
+
+.local4picnic-taskcolumn ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.local4picnic-taskcard {
+    background: rgba(15, 23, 42, 0.05);
+    border-radius: 14px;
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.local4picnic-taskcard footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: rgba(15, 23, 42, 0.6);
+}
+
+.local4picnic-taskcard button {
+    border: none;
+    background: rgba(79, 70, 229, 0.12);
+    color: #4338ca;
+    padding: 0.35rem 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s ease;
+}
+
+.local4picnic-taskcard button:hover {
+    background: rgba(79, 70, 229, 0.2);
+}
+
+.local4picnic-ledger table {
+    width: 100%;
+    border-collapse: collapse;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -18px rgba(15, 23, 42, 0.3);
+}
+
+.local4picnic-ledger thead {
+    background: rgba(15, 23, 42, 0.85);
+    color: #f9fafb;
+}
+
+.local4picnic-ledger th,
+.local4picnic-ledger td {
+    padding: 0.9rem 1rem;
+    text-align: left;
+}
+
+.local4picnic-ledger tbody tr:nth-child(even) {
+    background: rgba(15, 23, 42, 0.05);
+}
+
+.local4picnic-ledger tbody tr:hover {
+    background: rgba(249, 115, 22, 0.15);
+}
+
+.local4picnic-ledger .income {
+    color: #059669;
+    font-weight: 600;
+}
+
+.local4picnic-ledger .expense {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.local4picnic-crew table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.local4picnic-crew th,
+.local4picnic-crew td {
+    padding: 0.9rem 1rem;
+    text-align: left;
+}
+
+.local4picnic-crew thead {
+    background: rgba(30, 64, 175, 0.85);
+    color: #f9fafb;
+}
+
+.local4picnic-crew tbody tr:nth-child(odd) {
+    background: rgba(30, 64, 175, 0.06);
+}
+
+.local4picnic-feed {
+    display: grid;
+    gap: 1rem;
+}
+
+.local4picnic-feed__thread {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 12px 24px -20px rgba(15, 23, 42, 0.35);
+}
+
+.local4picnic-feed__meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: rgba(15, 23, 42, 0.55);
+}
+
+.local4picnic-feed__replies {
+    margin: 1rem 0 0;
+    padding-left: 1rem;
+    border-left: 2px solid rgba(15, 23, 42, 0.1);
+    display: grid;
+    gap: 0.75rem;
+}
+
+.local4picnic-feed__reply {
+    background: rgba(15, 23, 42, 0.05);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+}
+
+.local4picnic-notifications {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.local4picnic-notification {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 10px 25px -20px rgba(15, 23, 42, 0.4);
+}
+
+.local4picnic-notification__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.local4picnic-notification__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: rgba(59, 130, 246, 0.18);
+    color: #2563eb;
+}
+
+.local4picnic-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.05);
+    color: rgba(15, 23, 42, 0.55);
+    font-weight: 500;
+}
+
+.local4picnic-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(6px);
+    padding: 2rem;
+    z-index: 9999;
+}
+
+.local4picnic-modal.is-active {
+    display: flex;
+}
+
+.local4picnic-modal__content {
+    background: #ffffff;
+    border-radius: 18px;
+    width: min(420px, 100%);
+    padding: 1.5rem;
+    box-shadow: 0 30px 60px -20px rgba(15, 23, 42, 0.35);
+    display: grid;
+    gap: 1rem;
+}
+
+.local4picnic-modal__content header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.local4picnic-modal__content h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.local4picnic-modal__close {
+    border: none;
+    background: transparent;
+    font-size: 1.75rem;
+    cursor: pointer;
+    color: rgba(15, 23, 42, 0.5);
+}
+
+.local4picnic-modal form {
+    display: grid;
+    gap: 1rem;
+}
+
+.local4picnic-modal label {
+    display: grid;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: rgba(15, 23, 42, 0.8);
+}
+
+.local4picnic-modal input,
+.local4picnic-modal textarea,
+.local4picnic-modal select {
+    border: 1px solid rgba(15, 23, 42, 0.15);
+    border-radius: 12px;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.local4picnic-modal input:focus,
+.local4picnic-modal textarea:focus,
+.local4picnic-modal select:focus {
+    outline: none;
+    border-color: rgba(249, 115, 22, 0.8);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.25);
+}
+
+@media (max-width: 768px) {
+    .local4picnic-dashboard {
+        padding: 1.5rem;
+    }
+
+    .local4picnic-dashboard__panels {
+        padding: 1.5rem;
+    }
+}
