@@ -188,6 +188,28 @@ class Local4Picnic_REST {
                 ),
             )
         );
+
+        register_rest_route(
+            'local4picnic/v1',
+            '/stream',
+            array(
+                array(
+                    'methods'             => WP_REST_Server::READABLE,
+                    'callback'            => array( $this, 'stream_events' ),
+                    'permission_callback' => array( $this, 'must_be_logged_in' ),
+                    'args'                => array(
+                        'since'   => array(
+                            'required'          => false,
+                            'sanitize_callback' => 'absint',
+                        ),
+                        'timeout' => array(
+                            'required'          => false,
+                            'sanitize_callback' => 'absint',
+                        ),
+                    ),
+                ),
+            )
+        );
     }
 
     /**
@@ -1008,6 +1030,65 @@ class Local4Picnic_REST {
                 'created_at'=> current_time( 'mysql', true ),
             )
         );
+    }
+
+    /**
+     * Provide a long-poll stream for dashboard events.
+     *
+     * @param WP_REST_Request $request Request instance.
+     *
+     * @return WP_REST_Response
+     */
+    public function stream_events( WP_REST_Request $request ) {
+        $since   = absint( $request->get_param( 'since' ) );
+        $timeout = absint( $request->get_param( 'timeout' ) );
+
+        if ( $timeout <= 0 ) {
+            $timeout = 25;
+        }
+
+        $timeout = max( 5, min( $timeout, 60 ) );
+        $start   = time();
+
+        @set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_set_time_limit
+
+        while ( true ) {
+            $events = Local4Picnic_Data::get_events_since( $since );
+
+            if ( ! empty( $events ) ) {
+                $last = end( $events );
+
+                return rest_ensure_response(
+                    array(
+                        'events'       => $events,
+                        'cursor'       => (string) $last['id'],
+                        'refreshed_at' => current_time( 'mysql', true ),
+                    )
+                );
+            }
+
+            if ( ( time() - $start ) >= $timeout ) {
+                return rest_ensure_response(
+                    array(
+                        'events'       => array(),
+                        'cursor'       => (string) $since,
+                        'refreshed_at' => current_time( 'mysql', true ),
+                    )
+                );
+            }
+
+            if ( connection_aborted() ) {
+                return rest_ensure_response(
+                    array(
+                        'events'       => array(),
+                        'cursor'       => (string) $since,
+                        'refreshed_at' => current_time( 'mysql', true ),
+                    )
+                );
+            }
+
+            usleep( 500000 );
+        }
     }
 
     /**

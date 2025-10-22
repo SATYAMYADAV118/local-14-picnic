@@ -382,6 +382,11 @@ class Local4Picnic_Shortcode {
                     'feedComments' => ! empty( $options['feed_comments'] ),
                     'notifyEmail' => ! empty( $options['notify_email'] ),
                     'notifySms'   => ! empty( $options['notify_sms'] ),
+                    'smsProvider'=> isset( $options['sms_provider'] ) ? $options['sms_provider'] : '',
+                ),
+                'stream'   => array(
+                    'enabled' => true,
+                    'timeout' => 25,
                 ),
                 'strings'  => array(
                     'noTasks'        => __( 'No tasks yet. Enjoy the calm before the picnic!', 'local4picnic' ),

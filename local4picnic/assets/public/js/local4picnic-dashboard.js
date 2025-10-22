@@ -54,6 +54,12 @@
         return el;
     }
 
+    function delay(ms) {
+        return new Promise((resolve) => {
+            setTimeout(resolve, ms);
+        });
+    }
+
     ready(function () {
         const root = document.getElementById('local4picnic-dashboard');
 
@@ -114,6 +120,7 @@
         };
 
         const colors = ['#f97316', '#6366f1', '#14b8a6', '#ec4899', '#facc15', '#0ea5e9'];
+        const streamConfig = config.stream || {};
 
         const currencyFormatter = new Intl.NumberFormat(undefined, {
             style: 'currency',
@@ -1286,7 +1293,21 @@
             }
         }
 
+        const refreshHandlers = {
+            tasks: loadTasks,
+            funding: loadFunding,
+            crew: loadCrew,
+            notifications: loadNotifications,
+            feed: loadFeed,
+        };
+
         const pollers = {};
+        const inFlightRefresh = {};
+        let streamController = null;
+        let streamActive = false;
+        let streamCursor = null;
+        let streamBackoff = 1000;
+        let streamErrorCount = 0;
 
         function schedulePoll(key, callback, interval) {
             if (pollers[key]) {
@@ -1320,11 +1341,160 @@
             schedulePoll('crew', loadCrew, 25000);
         }
 
+        async function runRefresh(category) {
+            if (!refreshHandlers[category]) {
+                return;
+            }
+
+            if (inFlightRefresh[category]) {
+                await inFlightRefresh[category];
+                return;
+            }
+
+            const job = (async () => {
+                try {
+                    await refreshHandlers[category]();
+                } catch (error) {
+                    // eslint-disable-next-line no-console
+                    console.error(error);
+                } finally {
+                    inFlightRefresh[category] = null;
+                }
+            })();
+
+            inFlightRefresh[category] = job;
+
+            await job;
+        }
+
+        async function handleStreamEvents(events) {
+            if (!Array.isArray(events) || !events.length) {
+                return;
+            }
+
+            const queue = new Set();
+
+            events.forEach((event) => {
+                if (event && event.category && refreshHandlers[event.category]) {
+                    queue.add(event.category);
+                }
+            });
+
+            for (const category of queue) {
+                // eslint-disable-next-line no-await-in-loop
+                await runRefresh(category);
+            }
+        }
+
+        async function openStreamLoop() {
+            const configuredTimeout = Number(streamConfig.timeout);
+            const timeout = Number.isFinite(configuredTimeout) && configuredTimeout > 0 ? configuredTimeout : 25;
+
+            while (streamActive) {
+                try {
+                    streamController = new AbortController();
+
+                    const params = new URLSearchParams();
+                    params.append('timeout', timeout);
+
+                    if (streamCursor) {
+                        params.append('since', streamCursor);
+                    }
+
+                    const response = await fetch(`${config.restUrl}stream?${params.toString()}`, {
+                        method: 'GET',
+                        headers: {
+                            'X-WP-Nonce': config.nonce,
+                        },
+                        credentials: 'same-origin',
+                        signal: streamController.signal,
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Stream request failed with status ${response.status}`);
+                    }
+
+                    const payload = await response.json();
+
+                    if (payload.cursor) {
+                        streamCursor = payload.cursor;
+                    }
+
+                    if (Array.isArray(payload.events) && payload.events.length) {
+                        streamErrorCount = 0;
+                        streamBackoff = 1000;
+                        await handleStreamEvents(payload.events);
+                    } else {
+                        streamErrorCount = 0;
+                        streamBackoff = 1000;
+                    }
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        return;
+                    }
+
+                    // eslint-disable-next-line no-console
+                    console.error(error);
+
+                    streamErrorCount += 1;
+
+                    if (!streamActive) {
+                        return;
+                    }
+
+                    if (streamErrorCount >= 5) {
+                        streamActive = false;
+                        if (streamController) {
+                            try {
+                                streamController.abort();
+                            } catch (abortError) {
+                                // eslint-disable-next-line no-console
+                                console.warn(abortError);
+                            }
+                            streamController = null;
+                        }
+                        initializePolling();
+                        return;
+                    }
+
+                    await delay(streamBackoff);
+                    streamBackoff = Math.min(streamBackoff * 2, 15000);
+                }
+            }
+        }
+
+        function stopStream() {
+            streamActive = false;
+
+            if (streamController) {
+                streamController.abort();
+                streamController = null;
+            }
+        }
+
+        function initializeRealtime() {
+            if (!streamConfig.enabled || typeof fetch === 'undefined' || typeof AbortController === 'undefined' || typeof URLSearchParams === 'undefined') {
+                initializePolling();
+                return;
+            }
+
+            streamActive = true;
+            streamCursor = null;
+            streamBackoff = 1000;
+            streamErrorCount = 0;
+
+            openStreamLoop();
+        }
+
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
-                loadFeed();
-                loadNotifications();
+                runRefresh('feed');
+                runRefresh('notifications');
             }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            stopStream();
         });
 
         loadTasks();
@@ -1333,6 +1503,6 @@
         loadUsers();
         loadNotifications();
         loadFeed();
-        initializePolling();
+        initializeRealtime();
     });
 })();

@@ -102,6 +102,19 @@ class Local4Picnic_Data {
             KEY parent_id (parent_id)
         ) {$charset_collate};";
 
+        $tables['events'] = "CREATE TABLE " . self::table_name( 'events' ) . " (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            category varchar(60) NOT NULL,
+            action varchar(60) NOT NULL,
+            entity_id bigint(20) unsigned NOT NULL DEFAULT 0,
+            user_id bigint(20) unsigned NOT NULL DEFAULT 0,
+            payload longtext,
+            created_at datetime NOT NULL,
+            PRIMARY KEY  (id),
+            KEY category (category),
+            KEY created_at (created_at)
+        ) {$charset_collate};";
+
         return $tables;
     }
 
@@ -118,6 +131,109 @@ class Local4Picnic_Data {
         }
 
         return $tables;
+    }
+
+    /**
+     * Record a dashboard event so clients can react in real time.
+     *
+     * @param string $category Event category (tasks, funding, crew, feed, notifications).
+     * @param string $action   Action keyword (created, updated, deleted, posted, etc.).
+     * @param int    $entity_id Related entity identifier.
+     * @param array  $payload  Optional payload to deliver to subscribers.
+     * @param int    $user_id  Associated user ID if applicable.
+     */
+    public static function record_event( $category, $action, $entity_id = 0, $payload = array(), $user_id = 0 ) {
+        global $wpdb;
+
+        $table = self::table_name( 'events' );
+
+        $inserted = $wpdb->insert(
+            $table,
+            array(
+                'category'  => sanitize_key( $category ),
+                'action'    => sanitize_key( $action ),
+                'entity_id' => (int) $entity_id,
+                'user_id'   => (int) $user_id,
+                'payload'   => wp_json_encode( $payload ),
+                'created_at'=> current_time( 'mysql', true ),
+            ),
+            array( '%s', '%s', '%d', '%d', '%s', '%s' )
+        );
+
+        if ( false === $inserted ) {
+            return;
+        }
+
+        self::maybe_purge_events();
+    }
+
+    /**
+     * Fetch events after a given cursor.
+     *
+     * @param int $cursor Last seen event ID.
+     * @param int $limit  Max number of events.
+     *
+     * @return array
+     */
+    public static function get_events_since( $cursor = 0, $limit = 50 ) {
+        global $wpdb;
+
+        $table  = self::table_name( 'events' );
+        $cursor = absint( $cursor );
+        $limit  = max( 1, min( (int) $limit, 100 ) );
+
+        if ( $cursor > 0 ) {
+            $sql = $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE id > %d ORDER BY id ASC LIMIT %d",
+                $cursor,
+                $limit
+            );
+        } else {
+            $sql = $wpdb->prepare(
+                "SELECT * FROM {$table} ORDER BY id ASC LIMIT %d",
+                $limit
+            );
+        }
+
+        $rows = $wpdb->get_results( $sql, ARRAY_A );
+
+        foreach ( $rows as &$row ) {
+            $row['id']        = (int) $row['id'];
+            $row['entity_id'] = (int) $row['entity_id'];
+            $row['user_id']   = (int) $row['user_id'];
+
+            $payload = array();
+
+            if ( ! empty( $row['payload'] ) ) {
+                $decoded = json_decode( $row['payload'], true );
+
+                if ( is_array( $decoded ) ) {
+                    $payload = $decoded;
+                }
+            }
+
+            $row['payload'] = $payload;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Periodically trim stale events.
+     */
+    protected static function maybe_purge_events() {
+        $should_purge = function_exists( 'wp_rand' ) ? ( wp_rand( 1, 40 ) === 1 ) : ( mt_rand( 1, 40 ) === 1 );
+
+        if ( ! $should_purge ) {
+            return;
+        }
+
+        global $wpdb;
+
+        $table     = self::table_name( 'events' );
+        $threshold = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp', true ) - WEEK_IN_SECONDS );
+
+        $wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE created_at < %s", $threshold ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
     }
 
     /**
@@ -225,7 +341,13 @@ class Local4Picnic_Data {
             return new WP_Error( 'local4picnic_task_error', __( 'Unable to create task.', 'local4picnic' ) );
         }
 
-        return self::get_task( (int) $wpdb->insert_id );
+        $task = self::get_task( (int) $wpdb->insert_id );
+
+        if ( $task ) {
+            self::record_event( 'tasks', 'created', $task['id'], $task, (int) $task['assigned_to'] );
+        }
+
+        return $task;
     }
 
     /**
@@ -285,7 +407,13 @@ class Local4Picnic_Data {
             return new WP_Error( 'local4picnic_task_error', __( 'Unable to update task.', 'local4picnic' ) );
         }
 
-        return self::get_task( $task_id );
+        $task = self::get_task( $task_id );
+
+        if ( $task ) {
+            self::record_event( 'tasks', 'updated', $task['id'], $task, (int) $task['assigned_to'] );
+        }
+
+        return $task;
     }
 
     /**
@@ -297,7 +425,19 @@ class Local4Picnic_Data {
         global $wpdb;
 
         $table = self::table_name( 'tasks' );
+        $task  = self::get_task( $task_id );
+
         $wpdb->delete( $table, array( 'id' => $task_id ), array( '%d' ) );
+
+        $payload = array( 'id' => (int) $task_id );
+        $user_id = 0;
+
+        if ( $task ) {
+            $payload['title'] = isset( $task['title'] ) ? $task['title'] : '';
+            $user_id          = isset( $task['assigned_to'] ) ? (int) $task['assigned_to'] : 0;
+        }
+
+        self::record_event( 'tasks', 'deleted', (int) $task_id, $payload, $user_id );
     }
 
     /**
@@ -324,11 +464,21 @@ class Local4Picnic_Data {
         $users = array();
 
         foreach ( $query->get_results() as $user ) {
+            $phone = get_user_meta( $user->ID, 'local4picnic_phone', true );
+
+            if ( empty( $phone ) && ! empty( $user->user_email ) ) {
+                global $wpdb;
+
+                $crew_table = self::table_name( 'crew' );
+                $phone      = $wpdb->get_var( $wpdb->prepare( "SELECT phone FROM {$crew_table} WHERE email = %s ORDER BY updated_at DESC LIMIT 1", $user->user_email ) );
+            }
+
             $users[] = array(
                 'id'    => (int) $user->ID,
                 'name'  => $user->display_name,
                 'email' => $user->user_email,
                 'roles' => array_values( $user->roles ),
+                'phone' => $phone ? self::normalize_phone_number( $phone ) : '',
             );
         }
 
@@ -416,7 +566,13 @@ class Local4Picnic_Data {
             return new WP_Error( 'local4picnic_funding_error', __( 'Unable to save funding entry.', 'local4picnic' ) );
         }
 
-        return self::get_funding_entry( (int) $wpdb->insert_id );
+        $entry = self::get_funding_entry( (int) $wpdb->insert_id );
+
+        if ( $entry ) {
+            self::record_event( 'funding', 'created', $entry['id'], $entry, (int) $entry['recorded_by'] );
+        }
+
+        return $entry;
     }
 
     /**
@@ -497,7 +653,13 @@ class Local4Picnic_Data {
             return new WP_Error( 'local4picnic_funding_error', __( 'Unable to update funding entry.', 'local4picnic' ) );
         }
 
-        return self::get_funding_entry( $entry_id );
+        $entry = self::get_funding_entry( $entry_id );
+
+        if ( $entry ) {
+            self::record_event( 'funding', 'updated', $entry['id'], $entry, (int) $entry['recorded_by'] );
+        }
+
+        return $entry;
     }
 
     /**
@@ -509,7 +671,20 @@ class Local4Picnic_Data {
         global $wpdb;
 
         $table = self::table_name( 'funding' );
+        $entry = self::get_funding_entry( $entry_id );
+
         $wpdb->delete( $table, array( 'id' => $entry_id ), array( '%d' ) );
+
+        $payload = array( 'id' => (int) $entry_id );
+        $user_id = 0;
+
+        if ( $entry ) {
+            $payload['category']  = isset( $entry['category'] ) ? $entry['category'] : '';
+            $payload['direction'] = isset( $entry['direction'] ) ? $entry['direction'] : '';
+            $user_id              = isset( $entry['recorded_by'] ) ? (int) $entry['recorded_by'] : 0;
+        }
+
+        self::record_event( 'funding', 'deleted', (int) $entry_id, $payload, $user_id );
     }
 
     /**
@@ -567,7 +742,13 @@ class Local4Picnic_Data {
             return new WP_Error( 'local4picnic_crew_error', __( 'Unable to save crew member.', 'local4picnic' ) );
         }
 
-        return self::get_crew_member( (int) $wpdb->insert_id );
+        $member = self::get_crew_member( (int) $wpdb->insert_id );
+
+        if ( $member ) {
+            self::record_event( 'crew', 'created', $member['id'], $member, (int) $member['created_by'] );
+        }
+
+        return $member;
     }
 
     /**
@@ -646,7 +827,13 @@ class Local4Picnic_Data {
             return new WP_Error( 'local4picnic_crew_error', __( 'Unable to update crew member.', 'local4picnic' ) );
         }
 
-        return self::get_crew_member( $crew_id );
+        $member = self::get_crew_member( $crew_id );
+
+        if ( $member ) {
+            self::record_event( 'crew', 'updated', $member['id'], $member, (int) $member['created_by'] );
+        }
+
+        return $member;
     }
 
     /**
@@ -657,8 +844,22 @@ class Local4Picnic_Data {
     public static function delete_crew_member( $crew_id ) {
         global $wpdb;
 
-        $table = self::table_name( 'crew' );
+        $table  = self::table_name( 'crew' );
+        $member = self::get_crew_member( $crew_id );
+
         $wpdb->delete( $table, array( 'id' => $crew_id ), array( '%d' ) );
+
+        $payload = array( 'id' => (int) $crew_id );
+        $user_id = 0;
+
+        if ( $member ) {
+            $payload['name']  = isset( $member['name'] ) ? $member['name'] : '';
+            $payload['role']  = isset( $member['role'] ) ? $member['role'] : '';
+            $payload['email'] = isset( $member['email'] ) ? $member['email'] : '';
+            $user_id          = isset( $member['created_by'] ) ? (int) $member['created_by'] : 0;
+        }
+
+        self::record_event( 'crew', 'deleted', (int) $crew_id, $payload, $user_id );
     }
 
     /**
@@ -758,7 +959,15 @@ class Local4Picnic_Data {
             return new WP_Error( 'local4picnic_feed_error', __( 'Unable to publish to the feed.', 'local4picnic' ) );
         }
 
-        return self::get_feed_item( (int) $wpdb->insert_id );
+        $item = self::get_feed_item( (int) $wpdb->insert_id );
+
+        if ( $item ) {
+            $action = ! empty( $item['parent_id'] ) ? 'replied' : 'posted';
+
+            self::record_event( 'feed', $action, $item['id'], $item, (int) $item['user_id'] );
+        }
+
+        return $item;
     }
 
     /**
@@ -825,7 +1034,9 @@ class Local4Picnic_Data {
         $notification = self::get_notification( (int) $wpdb->insert_id );
 
         if ( $notification ) {
+            self::record_event( 'notifications', 'created', $notification['id'], $notification, (int) $notification['user_id'] );
             self::maybe_email_notification( $notification );
+            self::maybe_sms_notification( $notification );
         }
 
         return $notification;
@@ -943,6 +1154,166 @@ class Local4Picnic_Data {
     }
 
     /**
+     * Optionally dispatch SMS notifications.
+     *
+     * @param array $notification Notification payload.
+     */
+    protected static function maybe_sms_notification( $notification ) {
+        $options = Local4Picnic_Settings::get_options();
+
+        if ( empty( $options['notify_sms'] ) ) {
+            return;
+        }
+
+        $provider = isset( $options['sms_provider'] ) ? $options['sms_provider'] : '';
+
+        if ( empty( $provider ) ) {
+            return;
+        }
+
+        $recipients = array();
+
+        if ( ! empty( $notification['user_id'] ) ) {
+            $phone = self::get_user_phone_number( (int) $notification['user_id'] );
+
+            if ( ! empty( $phone ) ) {
+                $recipients[] = $phone;
+            }
+        } elseif ( ! empty( $options['sms_admin_number'] ) ) {
+            $admin_number = self::normalize_phone_number( $options['sms_admin_number'] );
+
+            if ( ! empty( $admin_number ) ) {
+                $recipients[] = $admin_number;
+            }
+        }
+
+        $recipients = apply_filters( 'local4picnic_sms_recipients', array_unique( array_filter( $recipients ) ), $notification, $options );
+
+        if ( empty( $recipients ) ) {
+            return;
+        }
+
+        foreach ( $recipients as $recipient ) {
+            self::dispatch_sms_notification( $provider, $recipient, $notification, $options );
+        }
+    }
+
+    /**
+     * Send SMS via configured provider or custom hooks.
+     *
+     * @param string $provider     Provider slug.
+     * @param string $recipient    Normalised phone number.
+     * @param array  $notification Notification payload.
+     * @param array  $options      Plugin options.
+     */
+    protected static function dispatch_sms_notification( $provider, $recipient, $notification, $options ) {
+        $message = wp_strip_all_tags( $notification['message'] );
+
+        if ( 'twilio' !== $provider ) {
+            /**
+             * Allow developers to wire up their own SMS provider.
+             */
+            do_action( 'local4picnic_send_sms', $provider, $recipient, $message, $notification, $options );
+
+            return;
+        }
+
+        $sid   = isset( $options['sms_twilio_sid'] ) ? trim( $options['sms_twilio_sid'] ) : '';
+        $token = isset( $options['sms_twilio_token'] ) ? trim( $options['sms_twilio_token'] ) : '';
+        $from  = isset( $options['sms_twilio_from'] ) ? self::normalize_phone_number( $options['sms_twilio_from'] ) : '';
+
+        if ( empty( $sid ) || empty( $token ) || empty( $from ) || empty( $recipient ) ) {
+            return;
+        }
+
+        $endpoint = sprintf( 'https://api.twilio.com/2010-04-01/Accounts/%s/Messages.json', rawurlencode( $sid ) );
+
+        $response = wp_remote_post(
+            $endpoint,
+            array(
+                'body'    => array(
+                    'To'   => $recipient,
+                    'From' => $from,
+                    'Body' => $message,
+                ),
+                'headers' => array(
+                    'Authorization' => 'Basic ' . base64_encode( $sid . ':' . $token ),
+                ),
+                'timeout' => 15,
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            do_action( 'local4picnic_sms_failed', $provider, $recipient, $message, $response );
+        } else {
+            do_action( 'local4picnic_sms_sent', $provider, $recipient, $message, $response );
+        }
+    }
+
+    /**
+     * Attempt to resolve a phone number for a WordPress user.
+     *
+     * @param int $user_id User ID.
+     *
+     * @return string
+     */
+    protected static function get_user_phone_number( $user_id ) {
+        $phone = get_user_meta( $user_id, 'local4picnic_phone', true );
+
+        if ( $phone ) {
+            $normalized = self::normalize_phone_number( $phone );
+
+            if ( ! empty( $normalized ) ) {
+                return $normalized;
+            }
+        }
+
+        $user = get_user_by( 'id', $user_id );
+
+        if ( ! $user || empty( $user->user_email ) ) {
+            return '';
+        }
+
+        global $wpdb;
+
+        $table = self::table_name( 'crew' );
+        $phone = $wpdb->get_var( $wpdb->prepare( "SELECT phone FROM {$table} WHERE email = %s ORDER BY updated_at DESC LIMIT 1", $user->user_email ) );
+
+        if ( empty( $phone ) ) {
+            return '';
+        }
+
+        return self::normalize_phone_number( $phone );
+    }
+
+    /**
+     * Normalise phone numbers to E.164 friendly format.
+     *
+     * @param string $value Raw phone value.
+     *
+     * @return string
+     */
+    protected static function normalize_phone_number( $value ) {
+        $value = trim( (string) $value );
+
+        if ( '' === $value ) {
+            return '';
+        }
+
+        $digits = preg_replace( '/[^0-9+]/', '', $value );
+
+        if ( '' === $digits ) {
+            return '';
+        }
+
+        if ( strpos( $digits, '+' ) !== 0 ) {
+            $digits = '+' . ltrim( $digits, '+' );
+        }
+
+        return $digits;
+    }
+
+    /**
      * Count unread notifications for a user.
      *
      * @param int $user_id User ID.
@@ -972,7 +1343,7 @@ class Local4Picnic_Data {
 
         $table = self::table_name( 'notifications' );
 
-        $wpdb->update(
+        $updated = $wpdb->update(
             $table,
             array(
                 'is_read' => 1,
@@ -981,5 +1352,13 @@ class Local4Picnic_Data {
             array( '%d' ),
             array( '%d' )
         );
+
+        if ( false !== $updated ) {
+            $notification = self::get_notification( $notification_id );
+
+            if ( $notification ) {
+                self::record_event( 'notifications', 'updated', $notification['id'], $notification, (int) $notification['user_id'] );
+            }
+        }
     }
 }
