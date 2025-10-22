@@ -11,14 +11,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Local4Picnic_REST {
 
-    const NAMESPACE = 'local4picnic/v1';
+    const ROUTE_NAMESPACE = 'local4picnic/v1';
 
     /**
      * Register routes.
      */
     public function register_routes() {
         register_rest_route(
-            self::NAMESPACE,
+            self::ROUTE_NAMESPACE,
             '/tasks',
             array(
                 array(
@@ -36,7 +36,7 @@ class Local4Picnic_REST {
         );
 
         register_rest_route(
-            self::NAMESPACE,
+            self::ROUTE_NAMESPACE,
             '/tasks/(?P<id>\d+)',
             array(
                 array(
@@ -59,7 +59,7 @@ class Local4Picnic_REST {
         );
 
         register_rest_route(
-            self::NAMESPACE,
+            self::ROUTE_NAMESPACE,
             '/funding',
             array(
                 array(
@@ -77,7 +77,7 @@ class Local4Picnic_REST {
         );
 
         register_rest_route(
-            self::NAMESPACE,
+            self::ROUTE_NAMESPACE,
             '/funding/(?P<id>\d+)',
             array(
                 array(
@@ -95,7 +95,7 @@ class Local4Picnic_REST {
         );
 
         register_rest_route(
-            self::NAMESPACE,
+            self::ROUTE_NAMESPACE,
             '/crew',
             array(
                 array(
@@ -113,7 +113,7 @@ class Local4Picnic_REST {
         );
 
         register_rest_route(
-            self::NAMESPACE,
+            self::ROUTE_NAMESPACE,
             '/crew/(?P<id>\d+)',
             array(
                 array(
@@ -131,7 +131,7 @@ class Local4Picnic_REST {
         );
 
         register_rest_route(
-            self::NAMESPACE,
+            self::ROUTE_NAMESPACE,
             '/feed',
             array(
                 array(
@@ -149,7 +149,7 @@ class Local4Picnic_REST {
         );
 
         register_rest_route(
-            self::NAMESPACE,
+            self::ROUTE_NAMESPACE,
             '/feed/(?P<id>\d+)',
             array(
                 array(
@@ -167,7 +167,7 @@ class Local4Picnic_REST {
         );
 
         register_rest_route(
-            self::NAMESPACE,
+            self::ROUTE_NAMESPACE,
             '/notifications',
             array(
                 array(
@@ -179,7 +179,7 @@ class Local4Picnic_REST {
         );
 
         register_rest_route(
-            self::NAMESPACE,
+            self::ROUTE_NAMESPACE,
             '/notifications/(?P<id>\d+)',
             array(
                 array(
@@ -196,7 +196,7 @@ class Local4Picnic_REST {
         );
 
         register_rest_route(
-            self::NAMESPACE,
+            self::ROUTE_NAMESPACE,
             '/assignable-users',
             array(
                 array(

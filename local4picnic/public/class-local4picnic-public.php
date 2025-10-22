@@ -62,7 +62,7 @@ class Local4Picnic_Public {
         $options      = Local4Picnic_Settings::get_options();
 
         $data = array(
-            'restUrl'      => esc_url_raw( rest_url( Local4Picnic_REST::NAMESPACE . '/' ) ),
+            'restUrl'      => esc_url_raw( rest_url( Local4Picnic_REST::ROUTE_NAMESPACE . '/' ) ),
             'nonce'        => wp_create_nonce( 'wp_rest' ),
             'currentUser'  => array(
                 'id'    => (int) $current_user->ID,
