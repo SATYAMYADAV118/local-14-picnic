@@ -10,6 +10,9 @@ Local 4 Picnic Manager is a WordPress plugin that turns any page into an immersi
 - **Crew management** – maintain a rich roster of volunteers, coordinators, sponsors, or vendors with contact details and notes.
 - **Notification center** – surface automated alerts for new assignments, funding activity, and feed updates with quick “mark as read” actions.
 - **Community feed with replies** – share wins, reminders, and threaded replies. Updates poll automatically to keep the conversation moving.
+- **Real-time updates** – long-poll streaming pushes task, funding, crew, notification, and feed changes instantly without manual refreshes.
+- **Custom roles & capabilities** – activation registers *Volunteer* and *Coordinator* roles alongside granular capabilities used by the REST permissions layer.
+- **SMS + email alerts** – connect a Twilio number (or custom provider via hooks) so critical notifications reach phones in addition to the in-app center.
 - **Custom roles & capabilities** – activation registers *Volunteer* and *Coordinator* roles alongside granular capabilities used by the REST permissions layer.
 
 ## Getting started
@@ -29,6 +32,7 @@ Navigate to **L4P → Settings** to configure:
 - Organization name and logo URL
 - Default currency and funding goal
 - Funding visibility, community feed comments toggle, notification preferences
+- SMS provider (Twilio) credentials and fallback admin number for text alerts
 - Whether plugin data is removed on uninstall
 
 Enabling **Remove Data on Uninstall** ensures the custom tables, roles, and options are purged when the plugin is deleted.

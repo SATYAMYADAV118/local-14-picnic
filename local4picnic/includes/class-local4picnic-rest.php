@@ -53,6 +53,24 @@ class Local4Picnic_REST {
 
         register_rest_route(
             'local4picnic/v1',
+            '/users',
+            array(
+                array(
+                    'methods'             => WP_REST_Server::READABLE,
+                    'callback'            => array( $this, 'get_users' ),
+                    'permission_callback' => array( $this, 'can_view_users' ),
+                    'args'                => array(
+                        'search' => array(
+                            'required'          => false,
+                            'sanitize_callback' => 'sanitize_text_field',
+                        ),
+                    ),
+                ),
+            )
+        );
+
+        register_rest_route(
+            'local4picnic/v1',
             '/funding',
             array(
                 array(
@@ -149,6 +167,12 @@ class Local4Picnic_REST {
                     'methods'             => WP_REST_Server::READABLE,
                     'callback'            => array( $this, 'get_notifications' ),
                     'permission_callback' => array( $this, 'must_be_logged_in' ),
+                    'args'                => array(
+                        'since' => array(
+                            'required'          => false,
+                            'sanitize_callback' => 'sanitize_text_field',
+                        ),
+                    ),
                 ),
             )
         );
@@ -161,6 +185,28 @@ class Local4Picnic_REST {
                     'methods'             => WP_REST_Server::EDITABLE,
                     'callback'            => array( $this, 'mark_notification_read' ),
                     'permission_callback' => array( $this, 'must_be_logged_in' ),
+                ),
+            )
+        );
+
+        register_rest_route(
+            'local4picnic/v1',
+            '/stream',
+            array(
+                array(
+                    'methods'             => WP_REST_Server::READABLE,
+                    'callback'            => array( $this, 'stream_events' ),
+                    'permission_callback' => array( $this, 'must_be_logged_in' ),
+                    'args'                => array(
+                        'since'   => array(
+                            'required'          => false,
+                            'sanitize_callback' => 'absint',
+                        ),
+                        'timeout' => array(
+                            'required'          => false,
+                            'sanitize_callback' => 'absint',
+                        ),
+                    ),
                 ),
             )
         );
@@ -178,6 +224,13 @@ class Local4Picnic_REST {
      */
     public function can_manage_tasks() {
         return current_user_can( 'l4p_manage_volunteers' );
+    }
+
+    /**
+     * Check whether current user can view assignable users.
+     */
+    public function can_view_users() {
+        return current_user_can( 'l4p_manage_volunteers' ) || current_user_can( 'manage_options' );
     }
 
     /**
@@ -199,6 +252,12 @@ class Local4Picnic_REST {
         $user_id = get_current_user_id();
 
         if ( $task['assigned_to'] === $user_id ) {
+            return true;
+        }
+
+        $requested_assignee = absint( $request->get_param( 'assigned_to' ) );
+
+        if ( 0 === (int) $task['assigned_to'] && $requested_assignee === $user_id ) {
             return true;
         }
 
@@ -413,6 +472,19 @@ class Local4Picnic_REST {
     }
 
     /**
+     * Retrieve assignable users.
+     *
+     * @param WP_REST_Request $request Request.
+     */
+    public function get_users( WP_REST_Request $request ) {
+        return rest_ensure_response(
+            array(
+                'users' => Local4Picnic_Data::get_assignable_users( $request->get_param( 'search' ) ),
+            )
+        );
+    }
+
+    /**
      * Create a task.
      *
      * @param WP_REST_Request $request Request.
@@ -420,11 +492,18 @@ class Local4Picnic_REST {
     public function create_task( WP_REST_Request $request ) {
         $data = $request->get_params();
 
+        $assignee = absint( $data['assigned_to'] );
+
+        if ( $assignee && ! get_user_by( 'id', $assignee ) ) {
+            return new WP_Error( 'local4picnic_task_assignee', __( 'Selected assignee does not exist.', 'local4picnic' ), array( 'status' => 400 ) );
+        }
+
         $task = Local4Picnic_Data::create_task(
             array(
                 'title'       => $data['title'],
                 'description' => wp_kses_post( $data['description'] ),
                 'status'      => $data['status'],
+                'assigned_to' => $assignee,
                 'assigned_to' => absint( $data['assigned_to'] ),
                 'created_by'  => get_current_user_id(),
                 'due_date'    => $data['due_date'] ? gmdate( 'Y-m-d H:i:s', strtotime( $data['due_date'] ) ) : null,
@@ -467,6 +546,13 @@ class Local4Picnic_REST {
         }
 
         if ( isset( $data['assigned_to'] ) ) {
+            $assignee = absint( $data['assigned_to'] );
+
+            if ( $assignee && ! get_user_by( 'id', $assignee ) ) {
+                return new WP_Error( 'local4picnic_task_assignee', __( 'Selected assignee does not exist.', 'local4picnic' ), array( 'status' => 400 ) );
+            }
+
+            $update['assigned_to'] = $assignee;
             $update['assigned_to'] = absint( $data['assigned_to'] );
         }
 
@@ -477,6 +563,14 @@ class Local4Picnic_REST {
         $update['updated_at'] = current_time( 'mysql', true );
 
         if ( ! current_user_can( 'l4p_manage_volunteers' ) ) {
+            $user_id = get_current_user_id();
+            $allowed = array( 'status' => true, 'updated_at' => true );
+
+            if ( isset( $update['assigned_to'] ) && (int) $original['assigned_to'] === 0 && $update['assigned_to'] === $user_id ) {
+                $allowed['assigned_to'] = true;
+            }
+
+            $update = array_intersect_key( $update, $allowed );
             $update = array_intersect_key( $update, array( 'status' => true, 'updated_at' => true ) );
         }
 
@@ -508,11 +602,14 @@ class Local4Picnic_REST {
     public function get_funding() {
         $entries = Local4Picnic_Data::get_funding_entries();
         $summary = Local4Picnic_Data::get_funding_summary();
+        $options = Local4Picnic_Settings::get_options();
 
         return rest_ensure_response(
             array(
                 'entries' => $entries,
                 'summary' => $summary,
+                'goal'    => isset( $options['funding_goal'] ) ? (float) $options['funding_goal'] : 0,
+                'visibility' => isset( $options['funding_visibility'] ) ? $options['funding_visibility'] : 'public',
             )
         );
     }
@@ -535,6 +632,7 @@ class Local4Picnic_REST {
                 'recorded_by' => get_current_user_id(),
                 'recorded_at' => $data['recorded_at'] ? gmdate( 'Y-m-d H:i:s', strtotime( $data['recorded_at'] ) ) : current_time( 'mysql', true ),
                 'created_at'  => current_time( 'mysql', true ),
+                'updated_at'  => current_time( 'mysql', true ),
             )
         );
 
@@ -632,6 +730,7 @@ class Local4Picnic_REST {
                 'notes'      => wp_kses_post( $data['notes'] ),
                 'created_by' => get_current_user_id(),
                 'created_at' => current_time( 'mysql', true ),
+                'updated_at' => current_time( 'mysql', true ),
             )
         );
 
@@ -698,10 +797,12 @@ class Local4Picnic_REST {
      */
     public function get_feed() {
         $threads = Local4Picnic_Data::get_feed_threads();
+        $options = Local4Picnic_Settings::get_options();
 
         return rest_ensure_response(
             array(
                 'threads' => $threads,
+                'allow_comments' => ! empty( $options['feed_comments'] ),
             )
         );
     }
@@ -714,12 +815,19 @@ class Local4Picnic_REST {
     public function create_feed_entry( WP_REST_Request $request ) {
         $data = $request->get_params();
 
+        $options = Local4Picnic_Settings::get_options();
+
+        if ( ! empty( $data['parent_id'] ) && empty( $options['feed_comments'] ) ) {
+            return new WP_Error( 'local4picnic_feed_locked', __( 'Replies are disabled for the community feed.', 'local4picnic' ), array( 'status' => 403 ) );
+        }
+
         $entry = Local4Picnic_Data::create_feed_entry(
             array(
                 'user_id'    => get_current_user_id(),
                 'parent_id'  => absint( $data['parent_id'] ),
                 'content'    => wp_kses_post( $data['content'] ),
                 'created_at' => current_time( 'mysql', true ),
+                'updated_at' => current_time( 'mysql', true ),
             )
         );
 
@@ -735,11 +843,15 @@ class Local4Picnic_REST {
     /**
      * Get notifications.
      */
+    public function get_notifications( WP_REST_Request $request ) {
     public function get_notifications() {
         $user_id = get_current_user_id();
 
         return rest_ensure_response(
             array(
+                'notifications' => Local4Picnic_Data::get_notifications_for_user( $user_id, $request->get_param( 'since' ) ),
+                'unread'        => Local4Picnic_Data::count_unread_notifications( $user_id ),
+                'refreshed_at'  => current_time( 'mysql', true ),
                 'notifications' => Local4Picnic_Data::get_notifications_for_user( $user_id ),
             )
         );
@@ -765,6 +877,12 @@ class Local4Picnic_REST {
 
         Local4Picnic_Data::mark_notification_read( $notification['id'] );
 
+        return rest_ensure_response(
+            array(
+                'updated' => true,
+                'unread'  => Local4Picnic_Data::count_unread_notifications( $user_id ),
+            )
+        );
         return rest_ensure_response( array( 'updated' => true ) );
     }
 
@@ -918,6 +1036,65 @@ class Local4Picnic_REST {
                 'created_at'=> current_time( 'mysql', true ),
             )
         );
+    }
+
+    /**
+     * Provide a long-poll stream for dashboard events.
+     *
+     * @param WP_REST_Request $request Request instance.
+     *
+     * @return WP_REST_Response
+     */
+    public function stream_events( WP_REST_Request $request ) {
+        $since   = absint( $request->get_param( 'since' ) );
+        $timeout = absint( $request->get_param( 'timeout' ) );
+
+        if ( $timeout <= 0 ) {
+            $timeout = 25;
+        }
+
+        $timeout = max( 5, min( $timeout, 60 ) );
+        $start   = time();
+
+        @set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_set_time_limit
+
+        while ( true ) {
+            $events = Local4Picnic_Data::get_events_since( $since );
+
+            if ( ! empty( $events ) ) {
+                $last = end( $events );
+
+                return rest_ensure_response(
+                    array(
+                        'events'       => $events,
+                        'cursor'       => (string) $last['id'],
+                        'refreshed_at' => current_time( 'mysql', true ),
+                    )
+                );
+            }
+
+            if ( ( time() - $start ) >= $timeout ) {
+                return rest_ensure_response(
+                    array(
+                        'events'       => array(),
+                        'cursor'       => (string) $since,
+                        'refreshed_at' => current_time( 'mysql', true ),
+                    )
+                );
+            }
+
+            if ( connection_aborted() ) {
+                return rest_ensure_response(
+                    array(
+                        'events'       => array(),
+                        'cursor'       => (string) $since,
+                        'refreshed_at' => current_time( 'mysql', true ),
+                    )
+                );
+            }
+
+            usleep( 500000 );
+        }
     }
 
     /**

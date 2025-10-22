@@ -65,6 +65,27 @@ class Local4Picnic_Shortcode {
                     </div>
                 </div>
                 <nav class="local4picnic-dashboard__nav" aria-label="<?php esc_attr_e( 'Dashboard navigation', 'local4picnic' ); ?>">
+                    <button class="is-active" data-target="overview">
+                        <span class="local4picnic-tab__label"><?php esc_html_e( 'Dashboard', 'local4picnic' ); ?></span>
+                    </button>
+                    <button data-target="tasks">
+                        <span class="local4picnic-tab__label"><?php esc_html_e( 'Tasks', 'local4picnic' ); ?></span>
+                        <span class="local4picnic-tab__badge" data-badge="tasks" aria-hidden="true"></span>
+                    </button>
+                    <button data-target="funding">
+                        <span class="local4picnic-tab__label"><?php esc_html_e( 'Funding', 'local4picnic' ); ?></span>
+                    </button>
+                    <button data-target="crew">
+                        <span class="local4picnic-tab__label"><?php esc_html_e( 'Crew', 'local4picnic' ); ?></span>
+                    </button>
+                    <button data-target="notifications">
+                        <span class="local4picnic-tab__label"><?php esc_html_e( 'Notifications', 'local4picnic' ); ?></span>
+                        <span class="local4picnic-tab__badge" data-badge="notifications" aria-hidden="true"></span>
+                    </button>
+                    <button data-target="community">
+                        <span class="local4picnic-tab__label"><?php esc_html_e( 'Community', 'local4picnic' ); ?></span>
+                        <span class="local4picnic-tab__badge" data-badge="community" aria-hidden="true"></span>
+                    </button>
                     <button class="is-active" data-target="overview"><?php esc_html_e( 'Dashboard', 'local4picnic' ); ?></button>
                     <button data-target="tasks"><?php esc_html_e( 'Tasks', 'local4picnic' ); ?></button>
                     <button data-target="funding"><?php esc_html_e( 'Funding', 'local4picnic' ); ?></button>
@@ -92,6 +113,12 @@ class Local4Picnic_Shortcode {
                                 <span><?php esc_html_e( 'No data yet', 'local4picnic' ); ?></span>
                             </div>
                             <ul class="local4picnic-legend" id="l4p-funding-legend"></ul>
+                            <div class="local4picnic-progress" id="l4p-funding-progress" aria-live="polite">
+                                <div class="local4picnic-progress__track" role="presentation">
+                                    <div class="local4picnic-progress__fill"></div>
+                                </div>
+                                <p class="local4picnic-progress__text"></p>
+                            </div>
                         </div>
                         <div class="local4picnic-card" data-component="notifications">
                             <header>
@@ -119,6 +146,7 @@ class Local4Picnic_Shortcode {
                             <?php esc_html_e( 'New Task', 'local4picnic' ); ?>
                         </button>
                     </header>
+                    <div class="local4picnic-taskmetrics" id="l4p-task-metrics" aria-live="polite"></div>
                     <div class="local4picnic-taskboard" id="l4p-taskboard">
                         <div class="local4picnic-taskcolumn" data-status="not_started">
                             <h4><?php esc_html_e( 'To Do', 'local4picnic' ); ?></h4>
@@ -197,6 +225,15 @@ class Local4Picnic_Shortcode {
                         <span><?php esc_html_e( 'Description', 'local4picnic' ); ?></span>
                         <textarea name="description" rows="4"></textarea>
                     </label>
+                    <label class="local4picnic-field local4picnic-field--combobox">
+                        <span><?php esc_html_e( 'Assign To', 'local4picnic' ); ?></span>
+                        <div class="local4picnic-combobox" data-component="assignee">
+                            <input type="hidden" name="assigned_to" value="0" />
+                            <input type="search" class="local4picnic-combobox__search" placeholder="<?php esc_attr_e( 'Search team members…', 'local4picnic' ); ?>" aria-expanded="false" aria-controls="l4p-assignee-list" autocomplete="off" />
+                            <button type="button" class="local4picnic-combobox__clear" aria-label="<?php esc_attr_e( 'Clear selection', 'local4picnic' ); ?>">&times;</button>
+                            <ul class="local4picnic-combobox__list" id="l4p-assignee-list" role="listbox"></ul>
+                        </div>
+                        <small><?php esc_html_e( 'Leave blank to keep this task unassigned.', 'local4picnic' ); ?></small>
                     <label>
                         <span><?php esc_html_e( 'Assign To (User ID)', 'local4picnic' ); ?></span>
                         <input type="number" name="assigned_to" min="0" />
@@ -350,6 +387,15 @@ class Local4Picnic_Shortcode {
                 'settings' => array(
                     'currency' => isset( $options['currency'] ) ? $options['currency'] : 'USD',
                     'fundingGoal' => isset( $options['funding_goal'] ) ? (float) $options['funding_goal'] : 0,
+                    'fundingVisibility' => isset( $options['funding_visibility'] ) ? $options['funding_visibility'] : 'public',
+                    'feedComments' => ! empty( $options['feed_comments'] ),
+                    'notifyEmail' => ! empty( $options['notify_email'] ),
+                    'notifySms'   => ! empty( $options['notify_sms'] ),
+                    'smsProvider'=> isset( $options['sms_provider'] ) ? $options['sms_provider'] : '',
+                ),
+                'stream'   => array(
+                    'enabled' => true,
+                    'timeout' => 25,
                 ),
                 'strings'  => array(
                     'noTasks'        => __( 'No tasks yet. Enjoy the calm before the picnic!', 'local4picnic' ),
@@ -359,6 +405,39 @@ class Local4Picnic_Shortcode {
                     'noFeed'         => __( 'Start the conversation by posting an update.', 'local4picnic' ),
                     'saving'         => __( 'Saving…', 'local4picnic' ),
                     'error'          => __( 'Something went wrong. Please try again.', 'local4picnic' ),
+                    'save'           => __( 'Save', 'local4picnic' ),
+                    'cancel'         => __( 'Cancel', 'local4picnic' ),
+                    'edit'           => __( 'Edit', 'local4picnic' ),
+                    'delete'         => __( 'Delete', 'local4picnic' ),
+                    'deleteTaskLabel'=> __( 'Delete task', 'local4picnic' ),
+                    'claimTask'      => __( 'Claim Task', 'local4picnic' ),
+                    'claimedTask'    => __( 'Assigned to you', 'local4picnic' ),
+                    'unassigned'     => __( 'Unassigned', 'local4picnic' ),
+                    'categoryLabel'  => __( 'Category', 'local4picnic' ),
+                    'directionLabel' => __( 'Direction', 'local4picnic' ),
+                    'amountLabel'    => __( 'Amount', 'local4picnic' ),
+                    'sourceLabel'    => __( 'Source', 'local4picnic' ),
+                    'recordedLabel'  => __( 'Recorded', 'local4picnic' ),
+                    'notesLabel'     => __( 'Notes', 'local4picnic' ),
+                    'actionsLabel'   => __( 'Actions', 'local4picnic' ),
+                    'nameLabel'      => __( 'Name', 'local4picnic' ),
+                    'emailLabel'     => __( 'Email', 'local4picnic' ),
+                    'phoneLabel'     => __( 'Phone', 'local4picnic' ),
+                    'roleLabel'      => __( 'Role', 'local4picnic' ),
+                    'incomeLabel'    => __( 'Income', 'local4picnic' ),
+                    'expenseLabel'   => __( 'Expense', 'local4picnic' ),
+                    'noFundingPermission' => __( 'Funding data is hidden for your role.', 'local4picnic' ),
+                    'goalProgress'   => __( '%1$s of %2$s raised', 'local4picnic' ),
+                    'goalRemaining'  => __( '%1$s remaining to reach your goal', 'local4picnic' ),
+                    'goalComplete'   => __( 'Funding goal reached! 🎉', 'local4picnic' ),
+                    'replyDisabled'  => __( 'Replies are disabled for this feed.', 'local4picnic' ),
+                    'noMatches'      => __( 'No matches found.', 'local4picnic' ),
+                    'replyPlaceholder' => __( 'Reply to this update…', 'local4picnic' ),
+                    'replyAction'   => __( 'Reply', 'local4picnic' ),
+                    'markRead'      => __( 'Mark read', 'local4picnic' ),
+                    'confirmDeleteFunding' => __( 'Delete this funding entry?', 'local4picnic' ),
+                    'confirmDeleteTask' => __( 'Delete this task?', 'local4picnic' ),
+                    'confirmDeleteCrew' => __( 'Remove this crew member?', 'local4picnic' ),
                     'statuses'       => array(
                         'not_started' => __( 'To Do', 'local4picnic' ),
                         'in_progress' => __( 'In Progress', 'local4picnic' ),
