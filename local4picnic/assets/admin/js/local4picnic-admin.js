@@ -1,11 +1,16 @@
-(function () {
-    document.addEventListener('DOMContentLoaded', function () {
-        var form = document.querySelector('.local4picnic-settings__form');
+(function ($) {
+    'use strict';
 
-        if (!form) {
-            return;
-        }
+    $(document).ready(function () {
+        $('.local4picnic-settings input[type="checkbox"]').each(function () {
+            var $checkbox = $(this);
+            var $row = $checkbox.closest('tr');
 
-        form.classList.add('is-ready');
+            $row.toggleClass('local4picnic-enabled', $checkbox.is(':checked'));
+
+            $checkbox.on('change', function () {
+                $row.toggleClass('local4picnic-enabled', $checkbox.is(':checked'));
+            });
+        });
     });
-})();
+})(jQuery);

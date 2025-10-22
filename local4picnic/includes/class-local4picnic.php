@@ -1,6 +1,6 @@
 <?php
 /**
- * Core plugin orchestrator.
+ * Core plugin class that wires together the functionality.
  *
  * @package Local4Picnic
  */
@@ -15,25 +15,18 @@ require_once LOCAL4PICNIC_PLUGIN_DIR . 'public/class-local4picnic-public.php';
 class Local4Picnic {
 
     /**
-     * Admin handler.
+     * Admin handler instance.
      *
      * @var Local4Picnic_Admin
      */
     protected $admin;
 
     /**
-     * Public handler.
+     * Public handler instance.
      *
      * @var Local4Picnic_Public
      */
     protected $public;
-
-    /**
-     * REST controller.
-     *
-     * @var Local4Picnic_REST
-     */
-    protected $rest;
 
     /**
      * Shortcode handler.
@@ -41,6 +34,13 @@ class Local4Picnic {
      * @var Local4Picnic_Shortcode
      */
     protected $shortcode;
+
+    /**
+     * REST API controller.
+     *
+     * @var Local4Picnic_REST
+     */
+    protected $rest;
 
     /**
      * Constructor.
@@ -53,10 +53,10 @@ class Local4Picnic {
     }
 
     /**
-     * Hook everything into WordPress.
+     * Register all WordPress hooks.
      */
     public function run() {
-        add_action( 'plugins_loaded', array( 'Local4Picnic_Install', 'maybe_upgrade' ) );
+        add_action( 'plugins_loaded', array( 'Local4Picnic_Install', 'maybe_upgrade' ), 5 );
         add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
         add_action( 'admin_init', array( 'Local4Picnic_Settings', 'register_settings' ) );
         add_action( 'admin_menu', array( 'Local4Picnic_Settings', 'register_menu' ) );
@@ -70,16 +70,17 @@ class Local4Picnic {
     }
 
     /**
-     * Load translations.
+     * Load plugin textdomain for translations.
      */
     public function load_textdomain() {
         load_plugin_textdomain( 'local4picnic', false, dirname( LOCAL4PICNIC_PLUGIN_BASENAME ) . '/languages' );
     }
 
     /**
-     * Add settings shortcut link.
+     * Add quick links to the plugin listing.
      *
-     * @param array $links Existing links.
+     * @param array $links Existing plugin links.
+     *
      * @return array
      */
     public function register_action_links( $links ) {

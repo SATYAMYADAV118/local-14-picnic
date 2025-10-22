@@ -16,5 +16,6 @@ class Local4Picnic_Deactivator {
      */
     public static function deactivate() {
         Local4Picnic_Roles::remove_caps();
+        Local4Picnic_Roles::remove_roles();
     }
 }

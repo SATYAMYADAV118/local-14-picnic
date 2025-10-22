@@ -1,8 +1,9 @@
 <?php
 /**
- * Settings page view.
+ * Settings page markup for Local4Picnic.
  *
- * @var array $options Current options.
+ * @var array $options Current plugin options.
+ * @var array $roles   Plugin role map.
  *
  * @package Local4Picnic
  */
@@ -13,9 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 <div class="wrap local4picnic-settings">
     <h1><?php esc_html_e( 'Local 4 Picnic Settings', 'local4picnic' ); ?></h1>
-    <p class="description"><?php esc_html_e( 'Configure organization details, funding preferences, and notification defaults for the dashboard shortcode.', 'local4picnic' ); ?></p>
-
-    <form action="options.php" method="post" class="local4picnic-settings__form">
+    <form method="post" action="options.php">
         <?php
         settings_fields( 'local4picnic_options_group' );
         do_settings_sections( Local4Picnic_Settings::OPTION_NAME );
@@ -23,8 +22,35 @@ if ( ! defined( 'ABSPATH' ) ) {
         ?>
     </form>
 
-    <section class="local4picnic-settings__roles">
-        <h2><?php esc_html_e( 'Role overview', 'local4picnic' ); ?></h2>
-        <p><?php esc_html_e( 'Volunteers can view dashboard data while coordinators can create and manage tasks, funding, crew, and feed content. Administrators inherit all capabilities automatically.', 'local4picnic' ); ?></p>
-    </section>
+    <h2><?php esc_html_e( 'Role Capabilities', 'local4picnic' ); ?></h2>
+    <p><?php esc_html_e( 'Review the capabilities assigned to each Local 4 Picnic role.', 'local4picnic' ); ?></p>
+    <table class="widefat striped">
+        <thead>
+            <tr>
+                <th><?php esc_html_e( 'Role', 'local4picnic' ); ?></th>
+                <th><?php esc_html_e( 'Capabilities', 'local4picnic' ); ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ( $roles as $role_key => $role_data ) : ?>
+                <tr>
+                    <td><strong><?php echo esc_html( $role_data['name'] ); ?></strong><br /><code><?php echo esc_html( $role_key ); ?></code></td>
+                    <td>
+                        <ul>
+                            <?php foreach ( $role_data['capabilities'] as $capability => $granted ) : ?>
+                                <li>
+                                    <?php echo esc_html( $capability ); ?>
+                                    <?php if ( $granted ) : ?>
+                                        <span class="local4picnic-cap granted"><?php esc_html_e( 'granted', 'local4picnic' ); ?></span>
+                                    <?php else : ?>
+                                        <span class="local4picnic-cap denied"><?php esc_html_e( 'denied', 'local4picnic' ); ?></span>
+                                    <?php endif; ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
 </div>

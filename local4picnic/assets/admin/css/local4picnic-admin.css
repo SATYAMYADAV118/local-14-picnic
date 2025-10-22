@@ -1,16 +1,18 @@
-.local4picnic-settings .description {
-    max-width: 600px;
+.local4picnic-settings .local4picnic-cap {
+    display: inline-block;
+    margin-left: 0.5em;
+    padding: 0 0.5em;
+    border-radius: 999px;
+    font-size: 12px;
+    text-transform: uppercase;
 }
 
-.local4picnic-settings__form {
-    background: #fff;
-    border: 1px solid #ccd0d4;
-    padding: 20px;
-    border-radius: 6px;
-    max-width: 720px;
+.local4picnic-settings .local4picnic-cap.granted {
+    background-color: #c6f6d5;
+    color: #22543d;
 }
 
-.local4picnic-settings__roles {
-    margin-top: 30px;
-    max-width: 720px;
+.local4picnic-settings .local4picnic-cap.denied {
+    background-color: #fed7d7;
+    color: #742a2a;
 }
