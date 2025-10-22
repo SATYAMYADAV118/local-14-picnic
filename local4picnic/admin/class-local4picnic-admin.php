@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin-specific functionality.
+ * Admin side logic.
  *
  * @package Local4Picnic
  */
@@ -12,10 +12,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Local4Picnic_Admin {
 
     /**
-     * Enqueue styles and scripts for the admin area.
+     * Enqueue admin assets.
+     *
+     * @param string $hook Current screen hook.
      */
-    public function enqueue_assets( $hook_suffix ) {
-        if ( strpos( $hook_suffix, 'local4picnic' ) === false ) {
+    public function enqueue_assets( $hook ) {
+        if ( false === strpos( $hook, 'local4picnic' ) ) {
             return;
         }
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Handle Local4Picnic settings registration and rendering.
+ * Settings registration and rendering.
  *
  * @package Local4Picnic
  */
@@ -11,13 +11,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Local4Picnic_Settings {
 
-    /**
-     * Option name used to store plugin settings.
-     */
     const OPTION_NAME = 'local4picnic_options';
 
     /**
-     * Register settings, sections, and fields.
+     * Register plugin settings and fields.
      */
     public static function register_settings() {
         register_setting(
@@ -28,14 +25,14 @@ class Local4Picnic_Settings {
 
         add_settings_section(
             'local4picnic_org_section',
-            __( 'Organization Details', 'local4picnic' ),
+            __( 'Organization', 'local4picnic' ),
             '__return_false',
             self::OPTION_NAME
         );
 
         add_settings_field(
             'org_name',
-            __( 'Organization Name', 'local4picnic' ),
+            __( 'Organization name', 'local4picnic' ),
             array( __CLASS__, 'render_text_field' ),
             self::OPTION_NAME,
             'local4picnic_org_section',
@@ -47,20 +44,20 @@ class Local4Picnic_Settings {
 
         add_settings_field(
             'org_logo',
-            __( 'Organization Logo URL', 'local4picnic' ),
+            __( 'Logo URL', 'local4picnic' ),
             array( __CLASS__, 'render_text_field' ),
             self::OPTION_NAME,
             'local4picnic_org_section',
             array(
                 'label_for'   => 'local4picnic_org_logo',
                 'option'      => 'org_logo',
-                'description' => __( 'Provide the URL to the organization logo or use the media library.', 'local4picnic' ),
+                'description' => __( 'Paste a URL or use the media library.', 'local4picnic' ),
             )
         );
 
         add_settings_section(
             'local4picnic_funding_section',
-            __( 'Funding Preferences', 'local4picnic' ),
+            __( 'Funding', 'local4picnic' ),
             '__return_false',
             self::OPTION_NAME
         );
@@ -79,12 +76,12 @@ class Local4Picnic_Settings {
 
         add_settings_field(
             'funding_goal',
-            __( 'Funding Goal', 'local4picnic' ),
+            __( 'Funding goal', 'local4picnic' ),
             array( __CLASS__, 'render_number_field' ),
             self::OPTION_NAME,
             'local4picnic_funding_section',
             array(
-                'label_for' => 'local4picnic_funding_goal',
+                'label_for' => 'local4picnic_goal',
                 'option'    => 'funding_goal',
                 'step'      => '0.01',
             )
@@ -92,12 +89,12 @@ class Local4Picnic_Settings {
 
         add_settings_field(
             'funding_visibility',
-            __( 'Funding Visibility', 'local4picnic' ),
+            __( 'Funding visibility', 'local4picnic' ),
             array( __CLASS__, 'render_select_field' ),
             self::OPTION_NAME,
             'local4picnic_funding_section',
             array(
-                'label_for' => 'local4picnic_funding_visibility',
+                'label_for' => 'local4picnic_visibility',
                 'option'    => 'funding_visibility',
                 'choices'   => array(
                     'public'  => __( 'Public', 'local4picnic' ),
@@ -108,15 +105,15 @@ class Local4Picnic_Settings {
 
         add_settings_section(
             'local4picnic_feed_section',
-            __( 'Community Feed', 'local4picnic' ),
+            __( 'Community feed', 'local4picnic' ),
             '__return_false',
             self::OPTION_NAME
         );
 
         add_settings_field(
             'feed_comments',
-            __( 'Enable Feed Comments', 'local4picnic' ),
-            array( __CLASS__, 'render_toggle_field' ),
+            __( 'Allow replies', 'local4picnic' ),
+            array( __CLASS__, 'render_checkbox_field' ),
             self::OPTION_NAME,
             'local4picnic_feed_section',
             array(
@@ -133,160 +130,79 @@ class Local4Picnic_Settings {
         );
 
         add_settings_field(
-            'notify_email',
-            __( 'Email Notifications', 'local4picnic' ),
-            array( __CLASS__, 'render_toggle_field' ),
+            'notifications_email',
+            __( 'Email alerts', 'local4picnic' ),
+            array( __CLASS__, 'render_checkbox_field' ),
             self::OPTION_NAME,
             'local4picnic_notifications_section',
             array(
-                'label_for' => 'local4picnic_notify_email',
-                'option'    => 'notify_email',
+                'label_for' => 'local4picnic_notifications_email',
+                'option'    => 'notifications_email',
             )
         );
 
         add_settings_field(
-            'notify_sms',
-            __( 'SMS Notifications', 'local4picnic' ),
-            array( __CLASS__, 'render_toggle_field' ),
+            'notifications_sms',
+            __( 'SMS alerts (manual)', 'local4picnic' ),
+            array( __CLASS__, 'render_checkbox_field' ),
             self::OPTION_NAME,
             'local4picnic_notifications_section',
             array(
-                'label_for' => 'local4picnic_notify_sms',
-                'option'    => 'notify_sms',
+                'label_for'   => 'local4picnic_notifications_sms',
+                'option'      => 'notifications_sms',
+                'description' => __( 'Toggle for future integrations.', 'local4picnic' ),
             )
         );
 
         add_settings_section(
-            'local4picnic_sms_section',
-            __( 'SMS Delivery', 'local4picnic' ),
-            array( __CLASS__, 'render_sms_help' ),
-            self::OPTION_NAME
-        );
-
-        add_settings_field(
-            'sms_provider',
-            __( 'Provider', 'local4picnic' ),
-            array( __CLASS__, 'render_select_field' ),
-            self::OPTION_NAME,
-            'local4picnic_sms_section',
-            array(
-                'label_for' => 'local4picnic_sms_provider',
-                'option'    => 'sms_provider',
-                'choices'   => array(
-                    ''        => __( 'Disabled', 'local4picnic' ),
-                    'twilio'  => __( 'Twilio', 'local4picnic' ),
-                ),
-            )
-        );
-
-        add_settings_field(
-            'sms_twilio_sid',
-            __( 'Twilio Account SID', 'local4picnic' ),
-            array( __CLASS__, 'render_text_field' ),
-            self::OPTION_NAME,
-            'local4picnic_sms_section',
-            array(
-                'label_for'   => 'local4picnic_twilio_sid',
-                'option'      => 'sms_twilio_sid',
-                'autocomplete'=> 'off',
-                'description' => __( 'Find this in your Twilio console.', 'local4picnic' ),
-            )
-        );
-
-        add_settings_field(
-            'sms_twilio_token',
-            __( 'Twilio Auth Token', 'local4picnic' ),
-            array( __CLASS__, 'render_text_field' ),
-            self::OPTION_NAME,
-            'local4picnic_sms_section',
-            array(
-                'label_for'   => 'local4picnic_twilio_token',
-                'option'      => 'sms_twilio_token',
-                'input_type'  => 'password',
-                'autocomplete'=> 'off',
-                'description' => __( 'Used to authenticate API requests to Twilio.', 'local4picnic' ),
-            )
-        );
-
-        add_settings_field(
-            'sms_twilio_from',
-            __( 'Twilio From Number', 'local4picnic' ),
-            array( __CLASS__, 'render_text_field' ),
-            self::OPTION_NAME,
-            'local4picnic_sms_section',
-            array(
-                'label_for'   => 'local4picnic_twilio_from',
-                'option'      => 'sms_twilio_from',
-                'input_type'  => 'tel',
-                'autocomplete'=> 'off',
-                'description' => __( 'Enter the sending number in E.164 format (e.g. +15551234567).', 'local4picnic' ),
-            )
-        );
-
-        add_settings_field(
-            'sms_admin_number',
-            __( 'Fallback Admin Number', 'local4picnic' ),
-            array( __CLASS__, 'render_text_field' ),
-            self::OPTION_NAME,
-            'local4picnic_sms_section',
-            array(
-                'label_for'   => 'local4picnic_sms_admin',
-                'option'      => 'sms_admin_number',
-                'input_type'  => 'tel',
-                'autocomplete'=> 'off',
-                'description' => __( 'Notifications sent to the whole team fall back to this number.', 'local4picnic' ),
-            )
-        );
-
-        add_settings_section(
-            'local4picnic_uninstall_section',
-            __( 'Data Management', 'local4picnic' ),
+            'local4picnic_data_section',
+            __( 'Data retention', 'local4picnic' ),
             '__return_false',
             self::OPTION_NAME
         );
 
         add_settings_field(
             'uninstall_purge',
-            __( 'Remove Data on Uninstall', 'local4picnic' ),
-            array( __CLASS__, 'render_toggle_field' ),
+            __( 'Remove data on uninstall', 'local4picnic' ),
+            array( __CLASS__, 'render_checkbox_field' ),
             self::OPTION_NAME,
-            'local4picnic_uninstall_section',
+            'local4picnic_data_section',
             array(
                 'label_for'   => 'local4picnic_uninstall_purge',
                 'option'      => 'uninstall_purge',
-                'description' => __( 'If enabled, plugin settings and roles are removed when the plugin is uninstalled.', 'local4picnic' ),
+                'description' => __( 'Deletes custom tables and options when uninstalling.', 'local4picnic' ),
             )
         );
     }
 
     /**
-     * Add the plugin settings page to the admin menu.
+     * Register the admin menu entries.
      */
     public static function register_menu() {
-        $parent_slug = 'local4picnic';
+        $capability = 'manage_options';
 
         add_menu_page(
-            __( 'Local 4 Picnic Manager', 'local4picnic' ),
+            __( 'Local 4 Picnic', 'local4picnic' ),
             __( 'L4P', 'local4picnic' ),
-            'manage_options',
-            $parent_slug,
+            $capability,
+            'local4picnic',
             array( __CLASS__, 'render_settings_page' ),
-            'dashicons-carrot',
-            59
+            'dashicons-groups',
+            58
         );
 
         add_submenu_page(
-            $parent_slug,
+            'local4picnic',
             __( 'Settings', 'local4picnic' ),
             __( 'Settings', 'local4picnic' ),
-            'manage_options',
-            $parent_slug,
+            $capability,
+            'local4picnic',
             array( __CLASS__, 'render_settings_page' )
         );
     }
 
     /**
-     * Render the settings page.
+     * Render settings page.
      */
     public static function render_settings_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
@@ -294,36 +210,21 @@ class Local4Picnic_Settings {
         }
 
         $options = self::get_options();
-        $roles   = Local4Picnic_Roles::get_roles();
 
         require LOCAL4PICNIC_PLUGIN_DIR . 'admin/partials/local4picnic-admin-settings.php';
     }
 
     /**
-     * Render helper text for the SMS section.
-     */
-    public static function render_sms_help() {
-        echo '<p class="description">' . esc_html__( 'Configure SMS delivery so urgent notifications reach teammates instantly.', 'local4picnic' ) . '</p>';
-    }
-
-    /**
-     * Render a text input field.
+     * Render a text field.
      *
-     * @param array $args Field arguments.
+     * @param array $args Arguments.
      */
     public static function render_text_field( $args ) {
         $options = self::get_options();
         $value   = isset( $options[ $args['option'] ] ) ? $options[ $args['option'] ] : '';
         $description = isset( $args['description'] ) ? $args['description'] : '';
-        $type        = isset( $args['input_type'] ) ? $args['input_type'] : 'text';
-        $autocomplete = isset( $args['autocomplete'] ) ? $args['autocomplete'] : '';
-        $autocomplete_attr = '';
-
-        if ( '' !== $autocomplete ) {
-            $autocomplete_attr = sprintf( ' autocomplete="%s"', esc_attr( $autocomplete ) );
-        }
         ?>
-        <input type="<?php echo esc_attr( $type ); ?>" id="<?php echo esc_attr( $args['label_for'] ); ?>" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[<?php echo esc_attr( $args['option'] ); ?>]" value="<?php echo esc_attr( $value ); ?>" class="regular-text"<?php echo $autocomplete_attr; ?> />
+        <input type="text" id="<?php echo esc_attr( $args['label_for'] ); ?>" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[<?php echo esc_attr( $args['option'] ); ?>]" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
         <?php if ( $description ) : ?>
             <p class="description"><?php echo esc_html( $description ); ?></p>
         <?php endif; ?>
@@ -331,7 +232,7 @@ class Local4Picnic_Settings {
     }
 
     /**
-     * Render a number field.
+     * Render number field.
      *
      * @param array $args Field arguments.
      */
@@ -340,14 +241,14 @@ class Local4Picnic_Settings {
         $value   = isset( $options[ $args['option'] ] ) ? $options[ $args['option'] ] : '';
         $step    = isset( $args['step'] ) ? $args['step'] : '1';
         ?>
-        <input type="number" step="<?php echo esc_attr( $step ); ?>" id="<?php echo esc_attr( $args['label_for'] ); ?>" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[<?php echo esc_attr( $args['option'] ); ?>]" value="<?php echo esc_attr( $value ); ?>" />
+        <input type="number" id="<?php echo esc_attr( $args['label_for'] ); ?>" step="<?php echo esc_attr( $step ); ?>" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[<?php echo esc_attr( $args['option'] ); ?>]" value="<?php echo esc_attr( $value ); ?>" />
         <?php
     }
 
     /**
-     * Render a select field.
+     * Render select field.
      *
-     * @param array $args Field arguments.
+     * @param array $args Arguments.
      */
     public static function render_select_field( $args ) {
         $options = self::get_options();
@@ -362,11 +263,11 @@ class Local4Picnic_Settings {
     }
 
     /**
-     * Render a checkbox toggle field.
+     * Render checkbox field.
      *
-     * @param array $args Field arguments.
+     * @param array $args Arguments.
      */
-    public static function render_toggle_field( $args ) {
+    public static function render_checkbox_field( $args ) {
         $options = self::get_options();
         $checked = ! empty( $options[ $args['option'] ] );
         $description = isset( $args['description'] ) ? $args['description'] : '';
@@ -382,14 +283,13 @@ class Local4Picnic_Settings {
     }
 
     /**
-     * Sanitize options before saving.
+     * Sanitize options.
      *
-     * @param array $input Raw input.
-     *
+     * @param array $input Raw values.
      * @return array
      */
     public static function sanitize_options( $input ) {
-        $defaults = self::get_default_options();
+        $defaults  = self::get_default_options();
         $sanitized = $defaults;
 
         if ( ! is_array( $input ) ) {
@@ -416,63 +316,16 @@ class Local4Picnic_Settings {
             $sanitized['funding_visibility'] = $input['funding_visibility'];
         }
 
-        $sanitized['feed_comments']    = ! empty( $input['feed_comments'] ) ? 1 : 0;
-        $sanitized['notify_email']     = ! empty( $input['notify_email'] ) ? 1 : 0;
-        $sanitized['notify_sms']       = ! empty( $input['notify_sms'] ) ? 1 : 0;
-        $sanitized['uninstall_purge']  = ! empty( $input['uninstall_purge'] ) ? 1 : 0;
-
-        if ( isset( $input['sms_provider'] ) && in_array( $input['sms_provider'], array( '', 'twilio' ), true ) ) {
-            $sanitized['sms_provider'] = $input['sms_provider'];
-        }
-
-        if ( isset( $input['sms_twilio_sid'] ) ) {
-            $sanitized['sms_twilio_sid'] = sanitize_text_field( $input['sms_twilio_sid'] );
-        }
-
-        if ( isset( $input['sms_twilio_token'] ) ) {
-            $sanitized['sms_twilio_token'] = sanitize_text_field( $input['sms_twilio_token'] );
-        }
-
-        if ( isset( $input['sms_twilio_from'] ) ) {
-            $sanitized['sms_twilio_from'] = self::sanitize_phone_option( $input['sms_twilio_from'] );
-        }
-
-        if ( isset( $input['sms_admin_number'] ) ) {
-            $sanitized['sms_admin_number'] = self::sanitize_phone_option( $input['sms_admin_number'] );
-        }
+        $sanitized['feed_comments']        = ! empty( $input['feed_comments'] ) ? 1 : 0;
+        $sanitized['notifications_email']  = ! empty( $input['notifications_email'] ) ? 1 : 0;
+        $sanitized['notifications_sms']    = ! empty( $input['notifications_sms'] ) ? 1 : 0;
+        $sanitized['uninstall_purge']      = ! empty( $input['uninstall_purge'] ) ? 1 : 0;
 
         return $sanitized;
     }
 
     /**
-     * Normalize phone inputs.
-     *
-     * @param string $value Raw phone.
-     *
-     * @return string
-     */
-    protected static function sanitize_phone_option( $value ) {
-        $value = trim( (string) $value );
-
-        if ( '' === $value ) {
-            return '';
-        }
-
-        $digits = preg_replace( '/[^0-9+]/', '', $value );
-
-        if ( '' === $digits ) {
-            return '';
-        }
-
-        if ( strpos( $digits, '+' ) !== 0 ) {
-            $digits = '+' . ltrim( $digits, '+' );
-        }
-
-        return $digits;
-    }
-
-    /**
-     * Retrieve plugin options merged with defaults.
+     * Get options with defaults.
      *
      * @return array
      */
@@ -483,7 +336,7 @@ class Local4Picnic_Settings {
     }
 
     /**
-     * Initialize the plugin options on activation.
+     * Seed default options on activation.
      */
     public static function initialize_options() {
         if ( false === get_option( self::OPTION_NAME ) ) {
@@ -492,26 +345,21 @@ class Local4Picnic_Settings {
     }
 
     /**
-     * Provide default option values.
+     * Default option values.
      *
      * @return array
      */
     public static function get_default_options() {
         return array(
-            'org_name'           => '',
-            'org_logo'           => '',
-            'currency'           => 'USD',
-            'funding_goal'       => 0,
-            'funding_visibility' => 'public',
-            'feed_comments'      => 1,
-            'notify_email'       => 1,
-            'notify_sms'         => 0,
-            'sms_provider'       => '',
-            'sms_twilio_sid'     => '',
-            'sms_twilio_token'   => '',
-            'sms_twilio_from'    => '',
-            'sms_admin_number'   => '',
-            'uninstall_purge'    => 0,
+            'org_name'             => '',
+            'org_logo'             => '',
+            'currency'             => 'USD',
+            'funding_goal'         => 0,
+            'funding_visibility'   => 'public',
+            'feed_comments'        => 1,
+            'notifications_email'  => 1,
+            'notifications_sms'    => 0,
+            'uninstall_purge'      => 0,
         );
     }
 }

@@ -1,9 +1,0 @@
-/* Public-facing styles for Local 4 Picnic Manager. */
-.local4picnic-badge {
-    display: inline-block;
-    padding: 0.25em 0.75em;
-    border-radius: 999px;
-    background-color: #f6ad55;
-    color: #1a202c;
-    font-weight: 600;
-}

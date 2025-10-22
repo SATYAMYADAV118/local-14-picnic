@@ -1,6 +1,6 @@
 <?php
 /**
- * Core plugin class that wires together the functionality.
+ * Core plugin orchestrator.
  *
  * @package Local4Picnic
  */
@@ -15,18 +15,25 @@ require_once LOCAL4PICNIC_PLUGIN_DIR . 'public/class-local4picnic-public.php';
 class Local4Picnic {
 
     /**
-     * Admin handler instance.
+     * Admin handler.
      *
      * @var Local4Picnic_Admin
      */
     protected $admin;
 
     /**
-     * Public handler instance.
+     * Public handler.
      *
      * @var Local4Picnic_Public
      */
     protected $public;
+
+    /**
+     * REST controller.
+     *
+     * @var Local4Picnic_REST
+     */
+    protected $rest;
 
     /**
      * Shortcode handler.
@@ -34,13 +41,6 @@ class Local4Picnic {
      * @var Local4Picnic_Shortcode
      */
     protected $shortcode;
-
-    /**
-     * REST API controller.
-     *
-     * @var Local4Picnic_REST
-     */
-    protected $rest;
 
     /**
      * Constructor.
@@ -53,10 +53,10 @@ class Local4Picnic {
     }
 
     /**
-     * Register all WordPress hooks.
+     * Hook everything into WordPress.
      */
     public function run() {
-        add_action( 'plugins_loaded', array( 'Local4Picnic_Install', 'maybe_upgrade' ), 5 );
+        add_action( 'plugins_loaded', array( 'Local4Picnic_Install', 'maybe_upgrade' ) );
         add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
         add_action( 'admin_init', array( 'Local4Picnic_Settings', 'register_settings' ) );
         add_action( 'admin_menu', array( 'Local4Picnic_Settings', 'register_menu' ) );
@@ -70,17 +70,16 @@ class Local4Picnic {
     }
 
     /**
-     * Load plugin textdomain for translations.
+     * Load translations.
      */
     public function load_textdomain() {
         load_plugin_textdomain( 'local4picnic', false, dirname( LOCAL4PICNIC_PLUGIN_BASENAME ) . '/languages' );
     }
 
     /**
-     * Add quick links to the plugin listing.
+     * Add settings shortcut link.
      *
-     * @param array $links Existing plugin links.
-     *
+     * @param array $links Existing links.
      * @return array
      */
     public function register_action_links( $links ) {
