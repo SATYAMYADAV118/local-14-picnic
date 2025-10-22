@@ -86,6 +86,12 @@ class Local4Picnic_Shortcode {
                         <span class="local4picnic-tab__label"><?php esc_html_e( 'Community', 'local4picnic' ); ?></span>
                         <span class="local4picnic-tab__badge" data-badge="community" aria-hidden="true"></span>
                     </button>
+                    <button class="is-active" data-target="overview"><?php esc_html_e( 'Dashboard', 'local4picnic' ); ?></button>
+                    <button data-target="tasks"><?php esc_html_e( 'Tasks', 'local4picnic' ); ?></button>
+                    <button data-target="funding"><?php esc_html_e( 'Funding', 'local4picnic' ); ?></button>
+                    <button data-target="crew"><?php esc_html_e( 'Crew', 'local4picnic' ); ?></button>
+                    <button data-target="notifications"><?php esc_html_e( 'Notifications', 'local4picnic' ); ?></button>
+                    <button data-target="community"><?php esc_html_e( 'Community', 'local4picnic' ); ?></button>
                 </nav>
             </header>
             <section class="local4picnic-dashboard__panels">
@@ -228,6 +234,9 @@ class Local4Picnic_Shortcode {
                             <ul class="local4picnic-combobox__list" id="l4p-assignee-list" role="listbox"></ul>
                         </div>
                         <small><?php esc_html_e( 'Leave blank to keep this task unassigned.', 'local4picnic' ); ?></small>
+                    <label>
+                        <span><?php esc_html_e( 'Assign To (User ID)', 'local4picnic' ); ?></span>
+                        <input type="number" name="assigned_to" min="0" />
                     </label>
                     <label>
                         <span><?php esc_html_e( 'Due Date', 'local4picnic' ); ?></span>

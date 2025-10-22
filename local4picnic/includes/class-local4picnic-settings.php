@@ -324,6 +324,8 @@ class Local4Picnic_Settings {
         }
         ?>
         <input type="<?php echo esc_attr( $type ); ?>" id="<?php echo esc_attr( $args['label_for'] ); ?>" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[<?php echo esc_attr( $args['option'] ); ?>]" value="<?php echo esc_attr( $value ); ?>" class="regular-text"<?php echo $autocomplete_attr; ?> />
+        ?>
+        <input type="text" id="<?php echo esc_attr( $args['label_for'] ); ?>" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[<?php echo esc_attr( $args['option'] ); ?>]" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
         <?php if ( $description ) : ?>
             <p class="description"><?php echo esc_html( $description ); ?></p>
         <?php endif; ?>

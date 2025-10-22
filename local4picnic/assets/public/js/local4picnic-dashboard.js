@@ -83,6 +83,11 @@
             unread: 0,
             notificationCursor: null,
             editingFunding: null
+                summary: []
+            },
+            crew: [],
+            notifications: [],
+            threads: []
         };
 
         const elements = {
@@ -97,6 +102,7 @@
             taskMetrics: document.getElementById('l4p-task-metrics'),
             fundingLedger: document.getElementById('l4p-funding-ledger'),
             fundingProgress: document.getElementById('l4p-funding-progress'),
+            fundingLedger: document.getElementById('l4p-funding-ledger'),
             crewList: document.getElementById('l4p-crew-list'),
             notifications: document.getElementById('l4p-notifications'),
             feed: document.getElementById('l4p-feed'),
@@ -146,6 +152,10 @@
             element.textContent = value;
             element.classList.add('is-visible');
         }
+            modals: root.parentNode.querySelectorAll('.local4picnic-modal')
+        };
+
+        const colors = ['#f97316', '#6366f1', '#14b8a6', '#ec4899', '#facc15', '#0ea5e9'];
 
         function setPanel(target) {
             elements.navButtons.forEach((button) => {
@@ -592,6 +602,8 @@
                     : (config.strings.expenseLabel || 'Expense');
                 const label = `${item.category} (${directionLabel})`;
                 const amount = formatCurrency(item.total);
+                const label = `${item.category} (${item.direction})`;
+                const amount = new Intl.NumberFormat(undefined, { style: 'currency', currency: config.settings.currency || 'USD', minimumFractionDigits: 2 }).format(item.total);
                 legendItem.appendChild(swatch);
                 legendItem.appendChild(createElement('span', null, `${label} – ${amount}`));
                 legend.appendChild(legendItem);
@@ -787,6 +799,11 @@
                     remove.setAttribute('aria-label', config.strings.deleteTaskLabel || config.strings.delete);
                     remove.addEventListener('click', async () => {
                         if (confirm(config.strings.confirmDeleteTask || 'Delete this task?')) { // eslint-disable-line no-alert
+                if (config.user.caps.manageTasks) {
+                    const remove = createElement('button', null, '✕');
+                    remove.setAttribute('aria-label', 'Delete task');
+                    remove.addEventListener('click', async () => {
+                        if (confirm('Delete this task?')) { // eslint-disable-line no-alert
                             await apiRequest(`tasks/${task.id}`, 'DELETE');
                             await loadTasks();
                         }
@@ -850,6 +867,14 @@
             });
             if (config.user.caps.manageFunding) {
                 headerRow.appendChild(createElement('th', null, config.strings.actionsLabel || 'Actions'));
+            const table = createElement('table');
+            const thead = createElement('thead');
+            const headerRow = createElement('tr');
+            ['Category', 'Direction', 'Amount', 'Source', 'Recorded', 'Notes'].forEach((label) => {
+                headerRow.appendChild(createElement('th', null, label));
+            });
+            if (config.user.caps.manageFunding) {
+                headerRow.appendChild(createElement('th', null, 'Actions'));
             }
             thead.appendChild(headerRow);
             table.appendChild(thead);
@@ -957,6 +982,31 @@
                         actions.appendChild(removeButton);
                         row.appendChild(actions);
                     }
+            state.funding.entries.forEach((entry) => {
+                const row = createElement('tr');
+                row.appendChild(createElement('td', null, entry.category));
+                const directionLabel = entry.direction === 'income' ? 'Income' : 'Expense';
+                row.appendChild(createElement('td', null, directionLabel));
+                const amount = new Intl.NumberFormat(undefined, { style: 'currency', currency: config.settings.currency || 'USD', minimumFractionDigits: 2 }).format(entry.amount);
+                row.appendChild(createElement('td', entry.direction === 'income' ? 'income' : 'expense', amount));
+                row.appendChild(createElement('td', null, entry.source || '—'));
+                const recorded = new Date(entry.recorded_at + 'Z').toLocaleString();
+                row.appendChild(createElement('td', null, recorded));
+                const notesCell = createElement('td');
+                notesCell.innerHTML = entry.notes || '—';
+                row.appendChild(notesCell);
+
+                if (config.user.caps.manageFunding) {
+                    const removeCell = createElement('td');
+                    const removeButton = createElement('button', null, 'Delete');
+                    removeButton.addEventListener('click', async () => {
+                        if (confirm('Delete this funding entry?')) { // eslint-disable-line no-alert
+                            await apiRequest(`funding/${entry.id}`, 'DELETE');
+                            await loadFunding();
+                        }
+                    });
+                    removeCell.appendChild(removeButton);
+                    row.appendChild(removeCell);
                 }
 
                 tbody.appendChild(row);
@@ -991,6 +1041,12 @@
             ].forEach((label) => headerRow.appendChild(createElement('th', null, label)));
             if (config.user.caps.manageCrew) {
                 headerRow.appendChild(createElement('th', null, config.strings.actionsLabel || 'Actions'));
+            const table = createElement('table');
+            const thead = createElement('thead');
+            const headerRow = createElement('tr');
+            ['Name', 'Email', 'Phone', 'Role'].forEach((label) => headerRow.appendChild(createElement('th', null, label)));
+            if (config.user.caps.manageCrew) {
+                headerRow.appendChild(createElement('th', null, 'Actions'));
             }
             thead.appendChild(headerRow);
             table.appendChild(thead);
@@ -1008,6 +1064,9 @@
                     const remove = createElement('button', 'local4picnic-button local4picnic-button--danger', config.strings.delete);
                     remove.addEventListener('click', async () => {
                         if (confirm(config.strings.confirmDeleteCrew || 'Remove this crew member?')) { // eslint-disable-line no-alert
+                    const remove = createElement('button', null, 'Delete');
+                    remove.addEventListener('click', async () => {
+                        if (confirm('Remove this crew member?')) { // eslint-disable-line no-alert
                             await apiRequest(`crew/${member.id}`, 'DELETE');
                             await loadCrew();
                         }
@@ -1073,6 +1132,7 @@
 
                     if (!notification.is_read) {
                         const button = createElement('button', 'local4picnic-button local4picnic-button--ghost', config.strings.markRead || 'Mark read');
+                        const button = createElement('button', null, 'Mark read');
                         button.addEventListener('click', async () => {
                             await apiRequest(`notifications/${notification.id}/read`, 'POST');
                             await loadNotifications();
@@ -1116,6 +1176,7 @@
                     }
                 }
                 updateNavBadge(elements.navBadgeCommunity, '');
+                }
                 return;
             }
 
@@ -1162,6 +1223,42 @@
                 }
 
                 if (state.feedComments) {
+                if (overview) {
+                    const card = createElement('div', 'local4picnic-feed__thread');
+                    card.appendChild(createElement('strong', null, thread.author));
+                    const body = createElement('p');
+                    body.innerHTML = thread.content;
+                    card.appendChild(body);
+                    overview.appendChild(card);
+                }
+            });
+
+            if (full) {
+                state.threads.forEach((thread) => {
+                    const card = createElement('div', 'local4picnic-feed__thread');
+                    const header = createElement('div', 'local4picnic-feed__meta');
+                    header.appendChild(createElement('strong', null, thread.author));
+                    header.appendChild(createElement('span', null, new Date(thread.created_at + 'Z').toLocaleString()));
+                    card.appendChild(header);
+
+                    const body = createElement('p');
+                    body.innerHTML = thread.content;
+                    card.appendChild(body);
+
+                    if (thread.replies && thread.replies.length) {
+                        const replies = createElement('div', 'local4picnic-feed__replies');
+                        thread.replies.forEach((reply) => {
+                            const replyCard = createElement('div', 'local4picnic-feed__reply');
+                            replyCard.appendChild(createElement('strong', null, reply.author));
+                            const replyBody = createElement('p');
+                            replyBody.innerHTML = reply.content;
+                            replyCard.appendChild(replyBody);
+                            replyCard.appendChild(createElement('small', null, new Date(reply.created_at + 'Z').toLocaleString()));
+                            replies.appendChild(replyCard);
+                        });
+                        card.appendChild(replies);
+                    }
+
                     const replyForm = createElement('form');
                     replyForm.className = 'local4picnic-feed__reply-form';
                     const textarea = createElement('textarea');
@@ -1170,6 +1267,9 @@
                     textarea.placeholder = config.strings.replyPlaceholder || 'Reply to this update…';
                     replyForm.appendChild(textarea);
                     const submit = createElement('button', 'local4picnic-button', config.strings.replyAction || 'Reply');
+                    textarea.placeholder = 'Reply to this update…';
+                    replyForm.appendChild(textarea);
+                    const submit = createElement('button', 'local4picnic-button', 'Reply');
                     submit.type = 'submit';
                     replyForm.appendChild(submit);
 
@@ -1216,6 +1316,8 @@
             } catch (error) {
                 // eslint-disable-next-line no-console
                 console.error(error);
+                    full.appendChild(card);
+                });
             }
         }
 
@@ -1238,6 +1340,7 @@
                 state.funding.summary = response.summary || [];
                 state.funding.goal = response.goal || config.settings.fundingGoal || 0;
                 state.funding.visibility = response.visibility || config.settings.fundingVisibility || 'public';
+                state.funding = response;
                 renderFundingSummary();
                 renderFundingLedger();
             } catch (error) {
@@ -1272,6 +1375,8 @@
 
                 state.unread = response.unread || 0;
                 state.notificationCursor = response.refreshed_at || new Date().toISOString();
+                const response = await apiRequest('notifications');
+                state.notifications = response.notifications || [];
                 renderNotifications();
             } catch (error) {
                 // eslint-disable-next-line no-console
@@ -1504,5 +1609,16 @@
         loadNotifications();
         loadFeed();
         initializeRealtime();
+        function initializePolling() {
+            setInterval(loadFeed, 15000);
+            setInterval(loadNotifications, 20000);
+        }
+
+        loadTasks();
+        loadFunding();
+        loadCrew();
+        loadNotifications();
+        loadFeed();
+        initializePolling();
     });
 })();

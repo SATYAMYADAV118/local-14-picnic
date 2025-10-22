@@ -504,6 +504,7 @@ class Local4Picnic_REST {
                 'description' => wp_kses_post( $data['description'] ),
                 'status'      => $data['status'],
                 'assigned_to' => $assignee,
+                'assigned_to' => absint( $data['assigned_to'] ),
                 'created_by'  => get_current_user_id(),
                 'due_date'    => $data['due_date'] ? gmdate( 'Y-m-d H:i:s', strtotime( $data['due_date'] ) ) : null,
                 'created_at'  => current_time( 'mysql', true ),
@@ -552,6 +553,7 @@ class Local4Picnic_REST {
             }
 
             $update['assigned_to'] = $assignee;
+            $update['assigned_to'] = absint( $data['assigned_to'] );
         }
 
         if ( isset( $data['due_date'] ) ) {
@@ -569,6 +571,7 @@ class Local4Picnic_REST {
             }
 
             $update = array_intersect_key( $update, $allowed );
+            $update = array_intersect_key( $update, array( 'status' => true, 'updated_at' => true ) );
         }
 
         $task = Local4Picnic_Data::update_task( $task_id, $update );
@@ -841,6 +844,7 @@ class Local4Picnic_REST {
      * Get notifications.
      */
     public function get_notifications( WP_REST_Request $request ) {
+    public function get_notifications() {
         $user_id = get_current_user_id();
 
         return rest_ensure_response(
@@ -848,6 +852,7 @@ class Local4Picnic_REST {
                 'notifications' => Local4Picnic_Data::get_notifications_for_user( $user_id, $request->get_param( 'since' ) ),
                 'unread'        => Local4Picnic_Data::count_unread_notifications( $user_id ),
                 'refreshed_at'  => current_time( 'mysql', true ),
+                'notifications' => Local4Picnic_Data::get_notifications_for_user( $user_id ),
             )
         );
     }
@@ -878,6 +883,7 @@ class Local4Picnic_REST {
                 'unread'  => Local4Picnic_Data::count_unread_notifications( $user_id ),
             )
         );
+        return rest_ensure_response( array( 'updated' => true ) );
     }
 
     /**

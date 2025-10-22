@@ -434,6 +434,8 @@
 }
 
 .local4picnic-table thead,
+}
+
 .local4picnic-ledger thead {
     background: rgba(15, 23, 42, 0.85);
     color: #f9fafb;
@@ -487,6 +489,8 @@
 
 .local4picnic-table .local4picnic-button {
     margin-right: 0.35rem;
+.local4picnic-ledger tbody tr:hover {
+    background: rgba(249, 115, 22, 0.15);
 }
 
 .local4picnic-ledger .income {

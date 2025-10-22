@@ -333,6 +333,7 @@ class Local4Picnic_Data {
                 'due_date'    => $data['due_date'],
                 'created_at'  => $data['created_at'],
                 'updated_at'  => isset( $data['updated_at'] ) ? $data['updated_at'] : $data['created_at'],
+                'updated_at'  => $data['updated_at'],
             ),
             array( '%s', '%s', '%s', '%d', '%d', '%s', '%s', '%s' )
         );
@@ -348,6 +349,7 @@ class Local4Picnic_Data {
         }
 
         return $task;
+        return self::get_task( (int) $wpdb->insert_id );
     }
 
     /**
@@ -414,6 +416,7 @@ class Local4Picnic_Data {
         }
 
         return $task;
+        return self::get_task( $task_id );
     }
 
     /**
@@ -483,6 +486,7 @@ class Local4Picnic_Data {
         }
 
         return $users;
+        $wpdb->delete( $table, array( 'id' => $task_id ), array( '%d' ) );
     }
 
     /**
@@ -560,6 +564,8 @@ class Local4Picnic_Data {
                 'updated_at'  => $data['updated_at'],
             ),
             array( '%s', '%f', '%s', '%s', '%s', '%d', '%s', '%s', '%s' )
+            ),
+            array( '%s', '%f', '%s', '%s', '%s', '%d', '%s', '%s' )
         );
 
         if ( false === $inserted ) {
@@ -573,6 +579,7 @@ class Local4Picnic_Data {
         }
 
         return $entry;
+        return self::get_funding_entry( (int) $wpdb->insert_id );
     }
 
     /**
@@ -660,6 +667,7 @@ class Local4Picnic_Data {
         }
 
         return $entry;
+        return self::get_funding_entry( $entry_id );
     }
 
     /**
@@ -685,6 +693,7 @@ class Local4Picnic_Data {
         }
 
         self::record_event( 'funding', 'deleted', (int) $entry_id, $payload, $user_id );
+        $wpdb->delete( $table, array( 'id' => $entry_id ), array( '%d' ) );
     }
 
     /**
@@ -736,6 +745,8 @@ class Local4Picnic_Data {
                 'updated_at' => isset( $data['updated_at'] ) ? $data['updated_at'] : $data['created_at'],
             ),
             array( '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s' )
+            ),
+            array( '%s', '%s', '%s', '%s', '%s', '%d', '%s' )
         );
 
         if ( false === $inserted ) {
@@ -749,6 +760,7 @@ class Local4Picnic_Data {
         }
 
         return $member;
+        return self::get_crew_member( (int) $wpdb->insert_id );
     }
 
     /**
@@ -834,6 +846,7 @@ class Local4Picnic_Data {
         }
 
         return $member;
+        return self::get_crew_member( $crew_id );
     }
 
     /**
@@ -860,6 +873,8 @@ class Local4Picnic_Data {
         }
 
         self::record_event( 'crew', 'deleted', (int) $crew_id, $payload, $user_id );
+        $table = self::table_name( 'crew' );
+        $wpdb->delete( $table, array( 'id' => $crew_id ), array( '%d' ) );
     }
 
     /**
@@ -953,6 +968,8 @@ class Local4Picnic_Data {
                 'updated_at'=> isset( $data['updated_at'] ) ? $data['updated_at'] : $data['created_at'],
             ),
             array( '%d', '%d', '%s', '%s', '%s' )
+            ),
+            array( '%d', '%d', '%s', '%s' )
         );
 
         if ( false === $inserted ) {
@@ -968,6 +985,7 @@ class Local4Picnic_Data {
         }
 
         return $item;
+        return self::get_feed_item( (int) $wpdb->insert_id );
     }
 
     /**
@@ -1040,6 +1058,7 @@ class Local4Picnic_Data {
         }
 
         return $notification;
+        return self::get_notification( (int) $wpdb->insert_id );
     }
 
     /**
@@ -1050,6 +1069,7 @@ class Local4Picnic_Data {
      * @return array
      */
     public static function get_notifications_for_user( $user_id, $since = null ) {
+    public static function get_notifications_for_user( $user_id ) {
         global $wpdb;
 
         $table = self::table_name( 'notifications' );
@@ -1079,6 +1099,13 @@ class Local4Picnic_Data {
                 $user_id
             );
         }
+        $query = $wpdb->prepare(
+            "SELECT * FROM {$table}
+            WHERE user_id = %d OR user_id = 0
+            ORDER BY created_at DESC
+            LIMIT 50",
+            $user_id
+        );
 
         $items = $wpdb->get_results( $query, ARRAY_A );
 
@@ -1344,6 +1371,7 @@ class Local4Picnic_Data {
         $table = self::table_name( 'notifications' );
 
         $updated = $wpdb->update(
+        $wpdb->update(
             $table,
             array(
                 'is_read' => 1,

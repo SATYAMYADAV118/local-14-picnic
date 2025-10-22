@@ -13,6 +13,7 @@ Local 4 Picnic Manager is a WordPress plugin that turns any page into an immersi
 - **Real-time updates** – long-poll streaming pushes task, funding, crew, notification, and feed changes instantly without manual refreshes.
 - **Custom roles & capabilities** – activation registers *Volunteer* and *Coordinator* roles alongside granular capabilities used by the REST permissions layer.
 - **SMS + email alerts** – connect a Twilio number (or custom provider via hooks) so critical notifications reach phones in addition to the in-app center.
+- **Custom roles & capabilities** – activation registers *Volunteer* and *Coordinator* roles alongside granular capabilities used by the REST permissions layer.
 
 ## Getting started
 
