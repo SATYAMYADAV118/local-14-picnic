@@ -10,6 +10,14 @@
     return;
   }
 
+  function currentUserId() {
+    if (!boot.currentUser || boot.currentUser.id === undefined || boot.currentUser.id === null) {
+      return null;
+    }
+    const value = Number(boot.currentUser.id);
+    return Number.isNaN(value) ? null : value;
+  }
+
   const state = {
     activeView: 'dashboard',
     tasks: [],
@@ -33,7 +41,7 @@
       priority: 'medium',
       due_date: '',
       url: '',
-      assignee_id: boot.currentUser ? boot.currentUser.id : null,
+      assignee_id: currentUserId(),
     },
     fundingFormState: {
       id: null,
@@ -995,8 +1003,9 @@
         renderView();
       }),
     });
+    const viewerId = currentUserId();
     const myTasks = state.tasks
-      .filter((task) => task.assignee_id === (boot.currentUser?.id || null))
+      .filter((task) => viewerId !== null && Number(task.assignee_id) === Number(viewerId))
       .slice(0, 3);
     if (!myTasks.length) {
       card.appendChild(el('div', 'l4p-empty', 'No tasks assigned to you yet.'));
@@ -1313,8 +1322,9 @@
     }
 
     const list = el('div', 'l4p-task-grid');
-    const myTasks = state.tasks.filter((task) => task.assignee_id === (boot.currentUser?.id || null));
-    const otherTasks = state.tasks.filter((task) => task.assignee_id !== (boot.currentUser?.id || null));
+    const viewerId = currentUserId();
+    const myTasks = state.tasks.filter((task) => viewerId !== null && Number(task.assignee_id) === Number(viewerId));
+    const otherTasks = state.tasks.filter((task) => viewerId === null || Number(task.assignee_id) !== Number(viewerId));
 
     list.appendChild(tasksGroup('My Tasks', myTasks));
     list.appendChild(tasksGroup('Other Tasks', otherTasks));
@@ -1396,6 +1406,35 @@
     return container;
   }
 
+  function normalizeTask(task) {
+    if (!task || typeof task !== 'object') {
+      return task;
+    }
+    const normalized = { ...task };
+    normalized.id = normalizeId(task.id);
+    normalized.assignee_id = coerceNullableNumber(task.assignee_id);
+    normalized.created_by = coerceNullableNumber(task.created_by);
+    normalized.created_at = task.created_at || null;
+    normalized.updated_at = task.updated_at || null;
+    return normalized;
+  }
+
+  function normalizeId(value) {
+    if (value === undefined || value === null) {
+      return value;
+    }
+    const asNumber = Number(value);
+    return Number.isNaN(asNumber) ? value : asNumber;
+  }
+
+  function coerceNullableNumber(value) {
+    if (value === undefined || value === null || value === '') {
+      return null;
+    }
+    const num = Number(value);
+    return Number.isNaN(num) ? null : num;
+  }
+
   function field(labelText, control) {
     const wrapper = el('div', 'l4p-field');
     wrapper.appendChild(el('label', null, labelText));
@@ -1471,7 +1510,7 @@
       priority: 'medium',
       due_date: '',
       url: '',
-      assignee_id: boot.currentUser ? boot.currentUser.id : null,
+      assignee_id: currentUserId(),
     };
   }
 
@@ -1513,6 +1552,8 @@
       showToast('Task title is required', true);
       return;
     }
+    const selectedAssignee = coerceNullableNumber(state.taskFormState.assignee_id);
+
     const payload = {
       title: state.taskFormState.title,
       description: state.taskFormState.description,
@@ -1520,7 +1561,7 @@
       priority: state.taskFormState.priority,
       due_date: state.taskFormState.due_date,
       url: state.taskFormState.url,
-      assignee_id: state.taskFormState.assignee_id,
+      assignee_id: selectedAssignee,
     };
 
     const optimisticId = `temp-${Date.now()}`;
@@ -1533,9 +1574,9 @@
       priority: payload.priority,
       due_date: payload.due_date,
       url: payload.url,
-      assignee_id: payload.assignee_id,
-      assignee_name: assignee ? assignee.name : payload.assignee_id ? 'Crew member' : 'Unassigned',
-      created_by: boot.currentUser?.id || null,
+      assignee_id: selectedAssignee,
+      assignee_name: assignee ? assignee.name : selectedAssignee ? 'Crew member' : 'Unassigned',
+      created_by: currentUserId(),
       created_by_name: boot.currentUser?.name || 'You',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -1550,7 +1591,8 @@
         method: 'POST',
         body: JSON.stringify(payload),
       });
-      state.tasks = state.tasks.map((task) => (task.id === optimisticId ? saved : task));
+      const normalized = normalizeTask(saved);
+      state.tasks = state.tasks.map((task) => (task.id === optimisticId ? normalized : task));
       showToast('Task saved successfully');
       resetTaskForm();
       await Promise.all([loadTasks(), loadNotifications()]);
@@ -1563,9 +1605,13 @@
   }
 
   async function updateTaskStatus(task, status) {
-    if (!isCoordinator && task.assignee_id !== (boot.currentUser?.id || null)) {
-      showToast('You can only update your own tasks', true);
-      return;
+    if (!isCoordinator) {
+      const viewerId = currentUserId();
+      const assigneeId = coerceNullableNumber(task.assignee_id);
+      if (viewerId === null || assigneeId !== viewerId) {
+        showToast('You can only update your own tasks', true);
+        return;
+      }
     }
     try {
       const optimistic = { ...task, status };
@@ -1575,7 +1621,8 @@
         method: 'POST',
         body: JSON.stringify({ status }),
       });
-      state.tasks = state.tasks.map((t) => (t.id === task.id ? updated : t));
+      const normalized = normalizeTask(updated);
+      state.tasks = state.tasks.map((t) => (t.id === task.id ? normalized : t));
       renderView();
     } catch (error) {
       showToast(error.message || 'Unable to update status', true);
@@ -2294,7 +2341,8 @@
         params.append('status', state.tasksFilter);
       }
       const res = await apiFetch(`/tasks${params.toString() ? `?${params.toString()}` : ''}`);
-      state.tasks = res.data || res;
+      const list = res.data || res || [];
+      state.tasks = Array.isArray(list) ? list.map(normalizeTask) : [];
       if (state.activeView === 'tasks' || state.activeView === 'dashboard') {
         renderView();
       }
