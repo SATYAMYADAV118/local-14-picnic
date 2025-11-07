@@ -21,10 +21,10 @@
     settings: boot.settings || {},
     loading: new Set(),
     modals: {
-      taskForm: false,
-      fundingForm: false,
       crewProfile: null,
     },
+    showTaskForm: false,
+    showFundingForm: false,
     taskFormState: {
       id: null,
       title: '',
@@ -44,6 +44,7 @@
       tx_date: new Date().toISOString().slice(0, 10),
     },
     toasts: [],
+    charts: {},
   };
 
   const caps = new Set((boot.currentUser && boot.currentUser.caps) || []);
@@ -335,6 +336,126 @@
         font-weight: 600;
         margin: 0;
       }
+      .l4p-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      .l4p-card-heading {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .l4p-card-subtitle {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.85rem;
+      }
+      .l4p-card-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .l4p-dashboard-grid {
+        display: grid;
+        gap: 24px;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      }
+      .l4p-link-button {
+        border: none;
+        background: transparent;
+        color: var(--l4p-primary);
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0;
+      }
+      .l4p-link-button::after {
+        content: '→';
+        font-size: 0.85rem;
+        transition: transform 0.2s ease;
+      }
+      .l4p-link-button:hover::after {
+        transform: translateX(3px);
+      }
+      .l4p-metric-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      }
+      .l4p-metric {
+        background: rgba(15,23,42,0.04);
+        border-radius: 16px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .l4p-metric.tone-positive {
+        background: rgba(34,197,94,0.12);
+      }
+      .l4p-metric.tone-negative {
+        background: rgba(239,68,68,0.12);
+      }
+      .l4p-metric-label {
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #64748b;
+      }
+      .l4p-metric-value {
+        font-size: clamp(1.1rem, 1.2vw, 1.4rem);
+        font-weight: 700;
+        color: var(--l4p-text);
+      }
+      .l4p-charts {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      .l4p-chart-card {
+        background: rgba(15,23,42,0.03);
+        border-radius: 16px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+      }
+      .l4p-chart-title {
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #475569;
+      }
+      .l4p-legend {
+        display: grid;
+        gap: 8px;
+        width: 100%;
+      }
+      .l4p-legend-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.85rem;
+        color: #475569;
+      }
+      .l4p-legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(148,163,184,0.6);
+      }
+      .l4p-legend-dot.tone-positive {
+        background: #0B5CD6;
+      }
+      .l4p-legend-dot.tone-negative {
+        background: #EF4444;
+      }
       .l4p-task {
         display: grid;
         gap: 8px;
@@ -386,6 +507,30 @@
         text-align: left;
         border-bottom: 1px solid rgba(15,23,42,0.08);
       }
+      .l4p-ledger-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+      }
+      .l4p-ledger-table th {
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        color: #64748b;
+        padding: 0 12px 12px 12px;
+      }
+      .l4p-ledger-table td {
+        padding: 14px 12px;
+        border-top: 1px solid rgba(15,23,42,0.08);
+      }
+      .l4p-ledger-table tbody tr:hover {
+        background: rgba(11,92,214,0.06);
+      }
+      .l4p-ledger-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
       .l4p-grid {
         display: grid;
         gap: 16px;
@@ -404,6 +549,141 @@
         font-size: 0.75rem;
         background: rgba(11,92,214,0.12);
         color: var(--l4p-primary);
+      }
+      .l4p-inline-form {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      .l4p-inline-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        grid-column: 1 / -1;
+      }
+      .l4p-control {
+        border-radius: 12px;
+        border: 1px solid rgba(15,23,42,0.12);
+        background: #fff;
+        padding: 10px 12px;
+        font: inherit;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      .l4p-control:focus {
+        outline: none;
+        border-color: var(--l4p-primary);
+        box-shadow: 0 0 0 3px rgba(11,92,214,0.18);
+      }
+      .l4p-tasks-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .l4p-task-grid {
+        display: grid;
+        gap: 24px;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      }
+      .l4p-task-list {
+        display: grid;
+        gap: 16px;
+      }
+      .l4p-task-card {
+        background: rgba(15,23,42,0.02);
+        border-radius: 16px;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .l4p-task-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .l4p-task-title-block {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .l4p-task-name {
+        margin: 0;
+        font-size: 1rem;
+      }
+      .l4p-task-description {
+        margin: 0;
+        color: #475569;
+      }
+      .l4p-task-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .l4p-task-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .l4p-task-people {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #475569;
+      }
+      .l4p-status-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .l4p-status-button {
+        border: none;
+        background: rgba(11,92,214,0.1);
+        color: var(--l4p-primary);
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .l4p-status-button[disabled] {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .l4p-status-button:not([disabled]):hover {
+        background: var(--l4p-primary);
+        color: #fff;
+      }
+      .l4p-status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .status-todo {
+        background: rgba(11,92,214,0.16);
+        color: var(--l4p-primary);
+      }
+      .status-progress {
+        background: rgba(245,158,11,0.18);
+        color: #b45309;
+      }
+      .status-done {
+        background: rgba(34,197,94,0.18);
+        color: #15803d;
+      }
+      .l4p-link {
+        color: var(--l4p-primary);
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .l4p-link:hover {
+        text-decoration: underline;
       }
       .l4p-tabs {
         display: inline-flex;
@@ -476,6 +756,79 @@
         border-radius: 14px;
         box-shadow: 0 18px 40px rgba(15,23,42,0.16);
         min-width: 220px;
+      }
+      .l4p-timeline {
+        display: grid;
+        gap: 14px;
+      }
+      .l4p-timeline-item {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+      }
+      .l4p-timeline-body {
+        display: grid;
+        gap: 4px;
+      }
+      .l4p-timeline-body p {
+        margin: 0;
+        color: #475569;
+      }
+      .l4p-list {
+        display: grid;
+        gap: 12px;
+      }
+      .l4p-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(15,23,42,0.08);
+      }
+      .l4p-list-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .l4p-amount {
+        font-weight: 700;
+      }
+      .l4p-amount.income {
+        color: #15803d;
+      }
+      .l4p-amount.expense {
+        color: #b91c1c;
+      }
+      .l4p-task-summary {
+        display: grid;
+        gap: 6px;
+        padding: 12px;
+        border-radius: 14px;
+        background: rgba(15,23,42,0.03);
+      }
+      .l4p-task-summary-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+      .l4p-pill.subtle {
+        background: rgba(15,23,42,0.08);
+        color: #475569;
+      }
+      .l4p-avatar-sm {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      .l4p-community-item {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border-radius: 14px;
+        background: rgba(15,23,42,0.03);
       }
       .l4p-badge {
         display: inline-flex;
@@ -626,7 +979,7 @@
   }
 
   function renderDashboard() {
-    const grid = el('div', 'l4p-cards two');
+    const grid = el('div', 'l4p-dashboard-grid');
     grid.appendChild(dashboardTasksCard());
     grid.appendChild(fundingSnapshotCard());
     grid.appendChild(notificationsCard());
@@ -635,8 +988,16 @@
   }
 
   function dashboardTasksCard() {
-    const card = cardShell('My Tasks');
-    const myTasks = state.tasks.filter((task) => task.assignee_id === (boot.currentUser?.id || null)).slice(0, 3);
+    const card = cardShell('My Tasks', {
+      subtitle: 'Today’s top priorities assigned to you.',
+      actions: buttonLink('View all tasks', () => {
+        state.activeView = 'tasks';
+        renderView();
+      }),
+    });
+    const myTasks = state.tasks
+      .filter((task) => task.assignee_id === (boot.currentUser?.id || null))
+      .slice(0, 3);
     if (!myTasks.length) {
       card.appendChild(el('div', 'l4p-empty', 'No tasks assigned to you yet.'));
       return card;
@@ -648,52 +1009,274 @@
   }
 
   function fundingSnapshotCard() {
-    const card = cardShell('Funding Snapshot');
-    const { income = 0, expense = 0, net = 0 } = state.funding.summary || {};
-    card.appendChild(el('p', null, `Income: $${income.toFixed(2)} | Expense: $${expense.toFixed(2)} | Net: $${net.toFixed(2)}`));
-    const list = el('ul', null);
-    state.funding.data.slice(0, 5).forEach((item) => {
-      list.appendChild(el('li', null, `${formatDate(item.tx_date)} • ${item.category} • ${item.type === 'income' ? '+' : '-'}$${Number(item.amount).toFixed(2)}`));
+    const totals = state.funding.summary || { income: 0, expense: 0, net: 0 };
+    const card = cardShell('Funding Snapshot', {
+      subtitle: 'Live view of inflow vs. expenses and rolling net trend.',
     });
-    card.appendChild(list);
+
+    const metrics = el('div', 'l4p-metric-grid', [
+      metricBlock('Income', `$${Number(totals.income || 0).toFixed(2)}`, 'positive'),
+      metricBlock('Expense', `$${Number(totals.expense || 0).toFixed(2)}`, 'negative'),
+      metricBlock('Net', `$${Number(totals.net || 0).toFixed(2)}`, totals.net >= 0 ? 'positive' : 'negative'),
+    ]);
+    card.appendChild(metrics);
+
+    const chartWrap = el('div', 'l4p-charts');
+    const donutCanvas = document.createElement('canvas');
+    donutCanvas.height = 180;
+    const trendCanvas = document.createElement('canvas');
+    trendCanvas.height = 160;
+    chartWrap.appendChild(el('div', 'l4p-chart-card', [
+      el('span', 'l4p-chart-title', 'Allocation'),
+      donutCanvas,
+      legendList([
+        { label: 'Income', tone: 'positive', value: totals.income },
+        { label: 'Expense', tone: 'negative', value: totals.expense },
+      ]),
+    ]));
+    chartWrap.appendChild(el('div', 'l4p-chart-card', [
+      el('span', 'l4p-chart-title', '7 day trend'),
+      trendCanvas,
+    ]));
+    card.appendChild(chartWrap);
+
+    const feed = el('div', 'l4p-list');
+    state.funding.data.slice(0, 4).forEach((item) => {
+      feed.appendChild(
+        el('div', 'l4p-list-item', [
+          el('div', 'l4p-list-meta', [
+            el('strong', null, item.category || 'Untitled'),
+            el('span', 'l4p-pill subtle', formatDate(item.tx_date)),
+          ]),
+          el(
+            'span',
+            item.type === 'income' ? 'l4p-amount income' : 'l4p-amount expense',
+            `${item.type === 'income' ? '+' : '-'}$${Number(item.amount).toFixed(2)}`
+          ),
+        ])
+      );
+    });
+    if (!state.funding.data.length) {
+      feed.appendChild(el('div', 'l4p-empty', 'No transactions yet.'));
+    }
+    card.appendChild(feed);
+
+    scheduleFundingCharts(donutCanvas, trendCanvas, 'dashboard');
     return card;
   }
 
   function notificationsCard() {
-    const card = cardShell('Latest Notifications');
-    state.notifications.data.slice(0, 5).forEach((note) => {
-      const div = el('div', null, [
-        el('strong', null, note.title),
-        el('div', null, note.body),
-        el('small', null, formatDateTime(note.created_at)),
-      ]);
-      card.appendChild(div);
+    const card = cardShell('Latest Notifications', {
+      subtitle: 'Stay in sync with key crew and funding updates.',
+      actions: buttonLink('Open notifications', () => {
+        state.activeView = 'notifications';
+        renderView();
+      }),
     });
-    if (!state.notifications.data.length) {
+    const items = state.notifications.data.slice(0, 5);
+    if (!items.length) {
       card.appendChild(el('div', 'l4p-empty', 'No notifications yet.'));
+      return card;
     }
+    const timeline = el('div', 'l4p-timeline');
+    items.forEach((note) => {
+      const row = el('div', 'l4p-timeline-item', [
+        el('span', 'l4p-pill subtle', formatDate(note.created_at)),
+        el('div', 'l4p-timeline-body', [
+          el('strong', null, note.title),
+          el('p', null, note.body),
+        ]),
+      ]);
+      timeline.appendChild(row);
+    });
+    card.appendChild(timeline);
     return card;
   }
 
   function communityCard() {
-    const card = cardShell('Community');
-    state.community.slice(0, 3).forEach((post) => {
-      const block = el('div', null, [
-        el('strong', null, post.author?.name || 'Member'),
-        el('div', null, truncate(post.body, 120)),
-        el('small', null, formatDateTime(post.created_at)),
-      ]);
-      card.appendChild(block);
+    const card = cardShell('Community Feed', {
+      subtitle: 'Recent posts and replies from your crew.',
+      actions: buttonLink('Go to community', () => {
+        state.activeView = 'community';
+        renderView();
+      }),
     });
-    if (!state.community.length) {
+    const posts = state.community.slice(0, 3);
+    if (!posts.length) {
       card.appendChild(el('div', 'l4p-empty', 'No community posts yet.'));
+      return card;
     }
+    posts.forEach((post) => {
+      const avatar = post.author?.avatar
+        ? el('img', 'l4p-avatar-sm', null, { src: post.author.avatar, alt: post.author.name || 'Member' })
+        : null;
+      const body = el('div', 'l4p-community-item', [
+        el('div', 'l4p-row', [avatar, el('div', null, [el('strong', null, post.author?.name || 'Member'), el('small', null, formatDateTime(post.created_at))])].filter(Boolean)),
+        el('p', null, truncate(post.body, 160)),
+      ]);
+      card.appendChild(body);
+    });
     return card;
+  }
+
+  function buttonLink(label, handler) {
+    const button = el('button', 'l4p-link-button', label);
+    button.type = 'button';
+    button.addEventListener('click', handler);
+    return button;
+  }
+
+  function metricBlock(label, value, tone) {
+    const metric = el('div', `l4p-metric ${tone ? `tone-${tone}` : ''}`.trim());
+    metric.appendChild(el('span', 'l4p-metric-label', label));
+    metric.appendChild(el('span', 'l4p-metric-value', value));
+    return metric;
+  }
+
+  function legendList(items) {
+    const list = el('div', 'l4p-legend');
+    items.forEach((item) => {
+      const row = el('div', 'l4p-legend-item', [
+        el('span', `l4p-legend-dot tone-${item.tone || 'neutral'}`.trim()),
+        el('span', null, item.label),
+        el('strong', null, `$${Number(item.value || 0).toFixed(2)}`),
+      ]);
+      list.appendChild(row);
+    });
+    return list;
+  }
+
+  let chartLibraryPromise = null;
+
+  function ensureChartLibrary() {
+    if (window.Chart) {
+      return Promise.resolve(window.Chart);
+    }
+    if (chartLibraryPromise) {
+      return chartLibraryPromise;
+    }
+    chartLibraryPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+      script.onload = () => resolve(window.Chart);
+      script.onerror = () => reject(new Error('Failed to load chart library'));
+      document.head.appendChild(script);
+    });
+    return chartLibraryPromise;
+  }
+
+  function scheduleFundingCharts(donutCanvas, trendCanvas, key) {
+    ensureChartLibrary()
+      .then((Chart) => {
+        const totals = state.funding.summary || { income: 0, expense: 0, net: 0 };
+        const donutKey = `${key}-donut`;
+        const trendKey = `${key}-trend`;
+
+        if (state.charts[donutKey]) {
+          state.charts[donutKey].destroy();
+        }
+        state.charts[donutKey] = new Chart(donutCanvas, {
+          type: 'doughnut',
+          data: {
+            labels: ['Income', 'Expense'],
+            datasets: [
+              {
+                data: [Number(totals.income || 0), Number(totals.expense || 0)],
+                backgroundColor: ['#0B5CD6', '#EF4444'],
+                borderWidth: 0,
+              },
+            ],
+          },
+          options: {
+            cutout: '68%',
+            plugins: { legend: { display: false } },
+          },
+        });
+
+        const trend = fundingTrendPoints();
+        if (state.charts[trendKey]) {
+          state.charts[trendKey].destroy();
+        }
+        state.charts[trendKey] = new Chart(trendCanvas, {
+          type: 'line',
+          data: {
+            labels: trend.labels,
+            datasets: [
+              {
+                label: 'Net',
+                data: trend.net,
+                borderColor: '#0B5CD6',
+                backgroundColor: 'rgba(11,92,214,0.18)',
+                tension: 0.4,
+                fill: true,
+              },
+            ],
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { display: true, ticks: { maxTicksLimit: 7 } },
+              y: { display: true, beginAtZero: true },
+            },
+          },
+        });
+      })
+      .catch(() => {
+        donutCanvas.replaceWith(el('div', 'l4p-empty', 'Charts unavailable offline.'));
+        trendCanvas.replaceWith(el('div', 'l4p-empty', 'Charts unavailable offline.'));
+      });
+  }
+
+  function fundingTrendPoints() {
+    const labels = [];
+    const net = [];
+    const today = new Date();
+    const items = Array.isArray(state.funding.data) ? state.funding.data : [];
+    for (let i = 6; i >= 0; i -= 1) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const key = date.toISOString().slice(0, 10);
+      labels.push(date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
+      let income = 0;
+      let expense = 0;
+      items.forEach((item) => {
+        if (!item.tx_date) {
+          return;
+        }
+        const itemDate = String(item.tx_date).slice(0, 10);
+        if (itemDate === key) {
+          if (item.type === 'income') {
+            income += Number(item.amount) || 0;
+          } else {
+            expense += Number(item.amount) || 0;
+          }
+        }
+      });
+      net.push(Number((income - expense).toFixed(2)));
+    }
+    return { labels, net };
+  }
+
+  function calculateFundingSummary(list) {
+    const items = Array.isArray(list) ? list : [];
+    return items.reduce(
+      (acc, item) => {
+        const amount = Number(item.amount) || 0;
+        if (item.type === 'income') {
+          acc.income += amount;
+        } else {
+          acc.expense += amount;
+        }
+        acc.net = acc.income - acc.expense;
+        return acc;
+      },
+      { income: 0, expense: 0, net: 0 }
+    );
   }
 
   function renderTasks() {
     const container = el('div', 'l4p-stack');
-    const headerRow = el('div', 'l4p-row');
+    const headerRow = el('div', 'l4p-tasks-header');
     const tabs = el('div', 'l4p-tabs');
     [
       { id: 'all', label: 'All' },
@@ -713,16 +1296,23 @@
     });
     headerRow.appendChild(tabs);
     if (canCreateTasks()) {
-      const add = el('button', 'l4p-btn', 'Add Task');
-      add.style.marginLeft = 'auto';
-      add.addEventListener('click', () => {
-        openTaskForm();
+      const toggle = el('button', 'l4p-btn', state.showTaskForm ? 'Hide composer' : 'New assignment');
+      toggle.addEventListener('click', () => {
+        state.showTaskForm = !state.showTaskForm;
+        if (state.showTaskForm && !state.taskFormState.title) {
+          resetTaskForm();
+        }
+        renderView();
       });
-      headerRow.appendChild(add);
+      headerRow.appendChild(toggle);
     }
     container.appendChild(headerRow);
 
-    const list = el('div', 'l4p-cards');
+    if (canCreateTasks() && state.showTaskForm) {
+      container.appendChild(taskComposerCard());
+    }
+
+    const list = el('div', 'l4p-task-grid');
     const myTasks = state.tasks.filter((task) => task.assignee_id === (boot.currentUser?.id || null));
     const otherTasks = state.tasks.filter((task) => task.assignee_id !== (boot.currentUser?.id || null));
 
@@ -731,7 +1321,6 @@
     container.appendChild(list);
 
     content.appendChild(container);
-    renderTaskModal();
   }
 
   function canCreateTasks() {
@@ -739,84 +1328,72 @@
   }
 
   function tasksGroup(title, tasks) {
-    const card = cardShell(title);
+    const subtitle = title === 'My Tasks' ? 'Assigned directly to you.' : 'Visible for awareness across the crew.';
+    const card = cardShell(title, { subtitle });
     if (!tasks.length) {
       card.appendChild(el('div', 'l4p-empty', 'Nothing to show.'));
       return card;
     }
+    const list = el('div', 'l4p-task-list');
     tasks.forEach((task) => {
-      card.appendChild(renderTask(task));
+      list.appendChild(renderTask(task));
     });
+    card.appendChild(list);
     return card;
   }
 
   function renderTask(task) {
-    const container = el('div', 'l4p-task');
-    container.appendChild(el('div', 'l4p-task-header', [
-      el('strong', null, task.title),
-      el('span', 'l4p-chip', statusLabel(task.status)),
-    ]));
+    const container = el('article', 'l4p-task-card');
+    const header = el('div', 'l4p-task-card-header');
+    const titleWrap = el('div', 'l4p-task-title-block', [
+      el('h3', 'l4p-task-name', task.title),
+      task.priority ? el('span', 'l4p-pill subtle', `Priority: ${task.priority}`) : null,
+    ]);
+    header.appendChild(titleWrap);
+    header.appendChild(el('span', `l4p-status-chip status-${task.status}`, statusLabel(task.status)));
+    container.appendChild(header);
+
     if (task.description) {
-      container.appendChild(el('div', null, task.description));
+      container.appendChild(el('p', 'l4p-task-description', truncate(task.description, 180)));
     }
-    const meta = [];
+
+    const metaRow = el('div', 'l4p-task-meta');
+    if (task.due_date) {
+      metaRow.appendChild(el('span', 'l4p-pill subtle', `Due ${formatDate(task.due_date)}`));
+    }
+    if (task.url) {
+      const link = el('a', 'l4p-link', 'Reference');
+      link.href = task.url;
+      link.target = '_blank';
+      metaRow.appendChild(link);
+    }
+    container.appendChild(metaRow);
+
+    const footer = el('div', 'l4p-task-footer');
+    const avatars = el('div', 'l4p-task-people');
+    if (task.assignee_avatar) {
+      avatars.appendChild(el('img', 'l4p-avatar-sm', null, { src: task.assignee_avatar, alt: task.assignee_name || 'Assignee' }));
+    }
+    const metaDetails = [];
     if (task.assignee_name) {
-      meta.push(`Assigned to ${task.assignee_name}`);
+      metaDetails.push(`Assigned to ${task.assignee_name}`);
     }
     if (task.created_by_name) {
-      meta.push(`by ${task.created_by_name}`);
+      metaDetails.push(`by ${task.created_by_name}`);
     }
-    container.appendChild(el('small', null, meta.join(' • ')));
-    const actions = el('div', 'l4p-task-actions');
+    avatars.appendChild(el('span', null, metaDetails.join(' • ')));
+    footer.appendChild(avatars);
+
+    const actions = el('div', 'l4p-status-actions');
     ['todo', 'progress', 'done'].forEach((status) => {
-      const btn = el('button', 'l4p-btn secondary', statusLabel(status));
+      const btn = el('button', 'l4p-status-button', statusLabel(status));
       btn.disabled = task.status === status;
       btn.addEventListener('click', () => updateTaskStatus(task, status));
       actions.appendChild(btn);
     });
-    container.appendChild(actions);
+    footer.appendChild(actions);
+    container.appendChild(footer);
     return container;
-  }
-
-  function renderTaskModal() {
-    const existing = document.querySelector('.l4p-task-modal');
-    if (existing) existing.remove();
-    if (!state.modals.taskForm) {
-      return;
-    }
-    const backdrop = el('div', 'l4p-modal-backdrop l4p-task-modal');
-    const modal = el('div', 'l4p-modal');
-    modal.appendChild(el('h2', null, state.taskFormState.id ? 'Edit Task' : 'New Task'));
-    const form = el('form', 'l4p-form');
-    form.appendChild(field('Title', input('text', 'title', state.taskFormState.title, true)));
-    form.appendChild(field('Description', textarea('description', state.taskFormState.description)));
-    form.appendChild(field('Priority', select('priority', state.taskFormState.priority, [
-      { value: 'low', label: 'Low' },
-      { value: 'medium', label: 'Medium' },
-      { value: 'high', label: 'High' },
-    ])));
-    form.appendChild(field('Due Date', input('date', 'due_date', state.taskFormState.due_date)));
-    form.appendChild(field('Reference URL', input('url', 'url', state.taskFormState.url)));
-    form.appendChild(field('Assign To', select('assignee_id', String(state.taskFormState.assignee_id || ''), crewOptions())));
-    if (state.taskFormState.id) {
-      form.appendChild(field('Status', select('status', state.taskFormState.status, [
-        { value: 'todo', label: 'To-Do' },
-        { value: 'progress', label: 'In Progress' },
-        { value: 'done', label: 'Completed' },
-      ])));
-    }
-    const actions = el('div', 'l4p-row-end');
-    const cancel = el('button', 'l4p-btn secondary', 'Cancel');
-    cancel.type = 'button';
-    cancel.addEventListener('click', closeTaskForm);
-    const submit = el('button', 'l4p-btn', state.taskFormState.id ? 'Save Changes' : 'Create Task');
-    submit.type = 'submit';
-    actions.append(cancel, submit);
-    form.appendChild(actions);
-    form.addEventListener('submit', submitTaskForm);
-    modal.appendChild(form);
-    backdrop.appendChild(modal);
-    document.body.appendChild(backdrop);
   }
 
   function field(labelText, control) {
@@ -831,6 +1408,7 @@
     elInput.type = type;
     elInput.name = name;
     elInput.value = value || '';
+    elInput.className = 'l4p-control';
     if (required) {
       elInput.required = true;
     }
@@ -845,6 +1423,7 @@
     elTextarea.name = name;
     elTextarea.rows = 4;
     elTextarea.value = value || '';
+    elTextarea.className = 'l4p-control';
     elTextarea.addEventListener('input', (event) => {
       state.taskFormState[event.target.name] = event.target.value;
     });
@@ -854,6 +1433,7 @@
   function select(name, value, options) {
     const elSelect = document.createElement('select');
     elSelect.name = name;
+    elSelect.className = 'l4p-control';
     options.forEach((option) => {
       const opt = document.createElement('option');
       opt.value = option.value;
@@ -882,32 +1462,57 @@
     return options;
   }
 
-  function openTaskForm(task) {
-    state.modals.taskForm = true;
-    if (task) {
-      state.taskFormState = { ...task };
-    } else {
-      state.taskFormState = {
-        id: null,
-        title: '',
-        description: '',
-        status: 'todo',
-        priority: 'medium',
-        due_date: '',
-        url: '',
-        assignee_id: boot.currentUser ? boot.currentUser.id : null,
-      };
-    }
-    renderTaskModal();
+  function resetTaskForm() {
+    state.taskFormState = {
+      id: null,
+      title: '',
+      description: '',
+      status: 'todo',
+      priority: 'medium',
+      due_date: '',
+      url: '',
+      assignee_id: boot.currentUser ? boot.currentUser.id : null,
+    };
   }
 
-  function closeTaskForm() {
-    state.modals.taskForm = false;
-    renderTaskModal();
+  function taskComposerCard() {
+    const card = cardShell('Create a task', {
+      subtitle: 'Assign work, share context, and notify teammates instantly.',
+    });
+    const form = el('form', 'l4p-inline-form');
+    form.appendChild(field('Title', input('text', 'title', state.taskFormState.title, true)));
+    form.appendChild(field('Description', textarea('description', state.taskFormState.description)));
+    form.appendChild(field('Priority', select('priority', state.taskFormState.priority, [
+      { value: 'low', label: 'Low' },
+      { value: 'medium', label: 'Medium' },
+      { value: 'high', label: 'High' },
+    ])));
+    form.appendChild(field('Due Date', input('date', 'due_date', state.taskFormState.due_date)));
+    form.appendChild(field('Reference URL', input('url', 'url', state.taskFormState.url)));
+    form.appendChild(field('Assign To', select('assignee_id', String(state.taskFormState.assignee_id || ''), crewOptions())));
+
+    const actions = el('div', 'l4p-inline-actions');
+    const clear = el('button', 'l4p-btn secondary', 'Clear');
+    clear.type = 'button';
+    clear.addEventListener('click', () => {
+      resetTaskForm();
+      renderView();
+    });
+    const submit = el('button', 'l4p-btn', 'Create task');
+    submit.type = 'submit';
+    actions.append(clear, submit);
+    form.appendChild(actions);
+    form.addEventListener('submit', submitTaskForm);
+    card.appendChild(form);
+    return card;
   }
 
   async function submitTaskForm(event) {
     event.preventDefault();
+    if (!state.taskFormState.title) {
+      showToast('Task title is required', true);
+      return;
+    }
     const payload = {
       title: state.taskFormState.title,
       description: state.taskFormState.description,
@@ -917,22 +1522,42 @@
       url: state.taskFormState.url,
       assignee_id: state.taskFormState.assignee_id,
     };
+
+    const optimisticId = `temp-${Date.now()}`;
+    const assignee = state.crew.find((member) => Number(member.wp_user_id) === Number(payload.assignee_id));
+    const optimisticTask = {
+      id: optimisticId,
+      title: payload.title,
+      description: payload.description,
+      status: payload.status,
+      priority: payload.priority,
+      due_date: payload.due_date,
+      url: payload.url,
+      assignee_id: payload.assignee_id,
+      assignee_name: assignee ? assignee.name : payload.assignee_id ? 'Crew member' : 'Unassigned',
+      created_by: boot.currentUser?.id || null,
+      created_by_name: boot.currentUser?.name || 'You',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const previousTasks = [...state.tasks];
+    state.tasks = [optimisticTask, ...state.tasks];
+    renderView();
+
     try {
-      if (state.taskFormState.id) {
-        await apiFetch(`/tasks/${state.taskFormState.id}/status`, {
-          method: 'POST',
-          body: JSON.stringify({ status: payload.status }),
-        });
-      } else {
-        await apiFetch('/tasks', {
-          method: 'POST',
-          body: JSON.stringify(payload),
-        });
-      }
-      closeTaskForm();
+      const saved = await apiFetch('/tasks', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      state.tasks = state.tasks.map((task) => (task.id === optimisticId ? saved : task));
       showToast('Task saved successfully');
-      await loadTasks();
+      resetTaskForm();
+      await Promise.all([loadTasks(), loadNotifications()]);
+      renderView();
     } catch (error) {
+      state.tasks = previousTasks;
+      renderView();
       showToast(error.message || 'Failed to save task', true);
     }
   }
@@ -960,110 +1585,157 @@
 
   function renderFunding() {
     const container = el('div', 'l4p-stack');
-    const summaryCard = cardShell('Funding Summary');
-    const summary = state.funding.summary || { income: 0, expense: 0, net: 0 };
-    summaryCard.appendChild(el('p', null, `Income: $${Number(summary.income || 0).toFixed(2)} | Expense: $${Number(summary.expense || 0).toFixed(2)} | Net: $${Number(summary.net || 0).toFixed(2)}`));
-    if (isCoordinator) {
-      const actions = el('div', 'l4p-row-gap');
-      const add = el('button', 'l4p-btn', 'Add Transaction');
-      add.addEventListener('click', () => openFundingForm());
-      const exportBtn = el('button', 'l4p-btn secondary', 'Export CSV');
-      exportBtn.addEventListener('click', exportFunding);
-      actions.append(add, exportBtn);
-      summaryCard.appendChild(actions);
-    }
+    const summaryCard = fundingSummaryCard();
     container.appendChild(summaryCard);
 
-    const tableCard = cardShell('Ledger');
-    if (!state.funding.data.length) {
-      tableCard.appendChild(el('div', 'l4p-empty', 'No funding transactions yet.'));
-    } else {
-      const table = el('table', 'l4p-table');
-      table.appendChild(el('thead', null, el('tr', null, [
-        el('th', null, 'Date'),
-        el('th', null, 'Type'),
-        el('th', null, 'Category'),
-        el('th', null, 'Amount'),
-        el('th', null, 'Note'),
-        isCoordinator ? el('th', null, 'Actions') : null,
-      ].filter(Boolean))));
-      const tbody = el('tbody');
-      state.funding.data.forEach((item) => {
-        const row = el('tr', null, [
-          el('td', null, formatDate(item.tx_date)),
-          el('td', null, item.type === 'income' ? 'Income' : 'Expense'),
-          el('td', null, item.category),
-          el('td', null, `$${Number(item.amount).toFixed(2)}`),
-          el('td', null, item.note || '—'),
-        ]);
-        if (isCoordinator) {
-          const actions = el('td');
-          const edit = el('button', 'l4p-btn secondary', 'Edit');
-          edit.addEventListener('click', () => openFundingForm(item));
-          const del = el('button', 'l4p-btn danger', 'Delete');
-          del.addEventListener('click', () => deleteFunding(item));
-          actions.append(edit, del);
-          row.appendChild(actions);
-        }
-        tbody.appendChild(row);
-      });
-      table.appendChild(tbody);
-      tableCard.appendChild(table);
+    if (isCoordinator && state.showFundingForm) {
+      container.appendChild(fundingComposerCard());
     }
-    container.appendChild(tableCard);
+
+    container.appendChild(fundingLedgerCard());
     content.appendChild(container);
-    renderFundingModal();
   }
 
-  function openFundingForm(item) {
-    state.modals.fundingForm = true;
-    if (item) {
-      state.fundingFormState = { ...item };
-    } else {
-      state.fundingFormState = {
-        id: null,
-        type: 'income',
-        amount: '',
-        category: '',
-        note: '',
-        tx_date: new Date().toISOString().slice(0, 10),
-      };
-    }
-    renderFundingModal();
+  function fundingSummaryCard() {
+    const totals = state.funding.summary || { income: 0, expense: 0, net: 0 };
+    const actions = isCoordinator
+      ? (() => {
+          const wrap = el('div', 'l4p-row-gap');
+          const toggle = el('button', 'l4p-btn', state.showFundingForm ? 'Hide form' : 'Add transaction');
+          toggle.addEventListener('click', () => {
+            state.showFundingForm = !state.showFundingForm;
+            resetFundingForm();
+            renderView();
+          });
+          const exportBtn = el('button', 'l4p-btn secondary', 'Export CSV');
+          exportBtn.addEventListener('click', exportFunding);
+          wrap.append(toggle, exportBtn);
+          return wrap;
+        })()
+      : null;
+
+    const card = cardShell('Funding overview', {
+      subtitle: 'Balance income, expenses, and insights in real time.',
+      actions,
+    });
+
+    const metrics = el('div', 'l4p-metric-grid', [
+      metricBlock('Total income', `$${Number(totals.income || 0).toFixed(2)}`, 'positive'),
+      metricBlock('Total expense', `$${Number(totals.expense || 0).toFixed(2)}`, 'negative'),
+      metricBlock('Net position', `$${Number(totals.net || 0).toFixed(2)}`, totals.net >= 0 ? 'positive' : 'negative'),
+    ]);
+    card.appendChild(metrics);
+
+    const chartWrap = el('div', 'l4p-charts');
+    const donutCanvas = document.createElement('canvas');
+    donutCanvas.height = 200;
+    const trendCanvas = document.createElement('canvas');
+    trendCanvas.height = 180;
+    chartWrap.appendChild(el('div', 'l4p-chart-card', [
+      el('span', 'l4p-chart-title', 'Allocation'),
+      donutCanvas,
+      legendList([
+        { label: 'Income', tone: 'positive', value: totals.income },
+        { label: 'Expense', tone: 'negative', value: totals.expense },
+      ]),
+    ]));
+    chartWrap.appendChild(el('div', 'l4p-chart-card', [
+      el('span', 'l4p-chart-title', '7 day trend'),
+      trendCanvas,
+    ]));
+    card.appendChild(chartWrap);
+    scheduleFundingCharts(donutCanvas, trendCanvas, 'funding');
+
+    return card;
   }
 
-  function closeFundingForm() {
-    state.modals.fundingForm = false;
-    renderFundingModal();
-  }
-
-  function renderFundingModal() {
-    const existing = document.querySelector('.l4p-funding-modal');
-    if (existing) existing.remove();
-    if (!state.modals.fundingForm) {
-      return;
-    }
-    const backdrop = el('div', 'l4p-modal-backdrop l4p-funding-modal');
-    const modal = el('div', 'l4p-modal');
-    modal.appendChild(el('h2', null, state.fundingFormState.id ? 'Edit Transaction' : 'Add Transaction'));
-    const form = el('form', 'l4p-form');
+  function fundingComposerCard() {
+    const card = cardShell(state.fundingFormState.id ? 'Update transaction' : 'Add transaction', {
+      subtitle: 'Capture income or expenses with contextual notes.',
+    });
+    const form = el('form', 'l4p-inline-form');
     form.appendChild(field('Type', selectFunding('type', state.fundingFormState.type)));
     form.appendChild(field('Amount', fundingInput('number', 'amount', state.fundingFormState.amount, true)));
     form.appendChild(field('Category', fundingInput('text', 'category', state.fundingFormState.category, true)));
     form.appendChild(field('Date', fundingInput('date', 'tx_date', state.fundingFormState.tx_date, true)));
     form.appendChild(field('Note', fundingTextarea('note', state.fundingFormState.note)));
-    const actions = el('div', 'l4p-row-end');
+
+    const actions = el('div', 'l4p-inline-actions');
     const cancel = el('button', 'l4p-btn secondary', 'Cancel');
     cancel.type = 'button';
-    cancel.addEventListener('click', closeFundingForm);
-    const submit = el('button', 'l4p-btn', state.fundingFormState.id ? 'Save' : 'Add');
+    cancel.addEventListener('click', () => {
+      resetFundingForm();
+      state.showFundingForm = false;
+      renderView();
+    });
+    const submit = el('button', 'l4p-btn', state.fundingFormState.id ? 'Save changes' : 'Add transaction');
     submit.type = 'submit';
     actions.append(cancel, submit);
     form.appendChild(actions);
     form.addEventListener('submit', submitFundingForm);
-    modal.appendChild(form);
-    backdrop.appendChild(modal);
-    document.body.appendChild(backdrop);
+    card.appendChild(form);
+    return card;
+  }
+
+  function fundingLedgerCard() {
+    const card = cardShell('Ledger', {
+      subtitle: 'Granular list of every inflow and expense.',
+    });
+    if (!state.funding.data.length) {
+      card.appendChild(el('div', 'l4p-empty', 'No funding transactions yet.'));
+      return card;
+    }
+
+    const table = el('table', 'l4p-ledger-table');
+    table.appendChild(
+      el('thead', null, el('tr', null, [
+        el('th', null, 'Date'),
+        el('th', null, 'Category'),
+        el('th', null, 'Type'),
+        el('th', null, 'Amount'),
+        el('th', null, 'Note'),
+        isCoordinator ? el('th', null, 'Actions') : null,
+      ].filter(Boolean)))
+    );
+    const tbody = el('tbody');
+    state.funding.data.forEach((item) => {
+      const row = el('tr', null);
+      row.appendChild(el('td', null, formatDate(item.tx_date)));
+      row.appendChild(el('td', null, item.category || '—'));
+      row.appendChild(el('td', null, item.type === 'income' ? 'Income' : 'Expense'));
+      row.appendChild(el('td', null, `${item.type === 'income' ? '+' : '-'}$${Number(item.amount).toFixed(2)}`));
+      row.appendChild(el('td', null, item.note || '—'));
+      if (isCoordinator) {
+        const actionCell = el('td', 'l4p-ledger-actions');
+        const edit = el('button', 'l4p-btn secondary', 'Edit');
+        edit.type = 'button';
+        edit.addEventListener('click', () => {
+          state.showFundingForm = true;
+          state.fundingFormState = { ...item };
+          renderView();
+        });
+        const del = el('button', 'l4p-btn danger', 'Delete');
+        del.type = 'button';
+        del.addEventListener('click', () => deleteFunding(item));
+        actionCell.append(edit, del);
+        row.appendChild(actionCell);
+      }
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    card.appendChild(table);
+    return card;
+  }
+
+  function resetFundingForm() {
+    state.fundingFormState = {
+      id: null,
+      type: 'income',
+      amount: '',
+      category: '',
+      note: '',
+      tx_date: new Date().toISOString().slice(0, 10),
+    };
   }
 
   function selectFunding(name, value) {
@@ -1078,6 +1750,7 @@
   function selectGeneric(name, value, options, handler) {
     const sel = document.createElement('select');
     sel.name = name;
+    sel.className = 'l4p-control';
     options.forEach((option) => {
       const opt = document.createElement('option');
       opt.value = option.value;
@@ -1096,7 +1769,12 @@
     input.type = type;
     input.name = name;
     input.value = value || '';
+    input.className = 'l4p-control';
     if (required) input.required = true;
+    if (type === 'number') {
+      input.step = '0.01';
+      input.min = '0';
+    }
     input.addEventListener('input', (event) => {
       state.fundingFormState[event.target.name] = event.target.value;
     });
@@ -1108,6 +1786,7 @@
     textarea.name = name;
     textarea.rows = 3;
     textarea.value = value || '';
+    textarea.className = 'l4p-control';
     textarea.addEventListener('input', (event) => {
       state.fundingFormState[event.target.name] = event.target.value;
     });
@@ -1116,30 +1795,63 @@
 
   async function submitFundingForm(event) {
     event.preventDefault();
-    try {
-      const payload = {
-        type: state.fundingFormState.type,
-        amount: state.fundingFormState.amount,
-        category: state.fundingFormState.category,
-        note: state.fundingFormState.note,
-        tx_date: state.fundingFormState.tx_date,
+    const payload = {
+      type: state.fundingFormState.type,
+      amount: state.fundingFormState.amount,
+      category: state.fundingFormState.category,
+      note: state.fundingFormState.note,
+      tx_date: state.fundingFormState.tx_date,
+    };
+
+    if (!payload.amount || Number.isNaN(Number(payload.amount))) {
+      showToast('Amount is required', true);
+      return;
+    }
+
+    payload.amount = Number(payload.amount);
+
+    const previous = {
+      data: [...state.funding.data],
+      summary: { ...state.funding.summary },
+    };
+
+    const isEdit = Boolean(state.fundingFormState.id);
+    const tempId = `temp-${Date.now()}`;
+
+    if (isEdit) {
+      state.funding.data = state.funding.data.map((item) =>
+        item.id === state.fundingFormState.id ? { ...item, ...payload } : item
+      );
+    } else {
+      const optimisticTx = {
+        id: tempId,
+        ...payload,
       };
-      if (state.fundingFormState.id) {
-        await apiFetch(`/funding/${state.fundingFormState.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(payload),
-        });
-      } else {
-        await apiFetch('/funding', {
-          method: 'POST',
-          body: JSON.stringify(payload),
-        });
+      state.funding.data = [optimisticTx, ...state.funding.data];
+    }
+    state.funding.summary = calculateFundingSummary(state.funding.data);
+    renderView();
+
+    try {
+      const endpoint = isEdit ? `/funding/${state.fundingFormState.id}` : '/funding';
+      const method = isEdit ? 'PUT' : 'POST';
+      const saved = await apiFetch(endpoint, {
+        method,
+        body: JSON.stringify(payload),
+      });
+
+      if (!isEdit) {
+        state.funding.data = state.funding.data.map((item) => (item.id === tempId ? saved : item));
       }
-      closeFundingForm();
+      state.funding.summary = calculateFundingSummary(state.funding.data);
       showToast('Funding saved');
-      await loadFunding();
+      resetFundingForm();
+      state.showFundingForm = false;
+      await Promise.all([loadFunding(), loadNotifications()]);
       renderView();
     } catch (error) {
+      state.funding = previous;
+      renderView();
       showToast(error.message || 'Unable to save funding', true);
     }
   }
@@ -1151,7 +1863,7 @@
     try {
       await apiFetch(`/funding/${item.id}`, { method: 'DELETE' });
       showToast('Transaction deleted');
-      await loadFunding();
+      await Promise.all([loadFunding(), loadNotifications()]);
       renderView();
     } catch (error) {
       showToast(error.message || 'Unable to delete', true);
@@ -1505,19 +2217,42 @@
     }
   }
 
-  function cardShell(title) {
+  function cardShell(title, options = {}) {
     const card = el('section', 'l4p-card');
-    card.appendChild(el('h2', 'l4p-card-title', title));
+    const header = el('div', 'l4p-card-header');
+    const text = el('div', 'l4p-card-heading', [el('h2', 'l4p-card-title', title)]);
+    if (options.subtitle) {
+      text.appendChild(el('p', 'l4p-card-subtitle', options.subtitle));
+    }
+    header.appendChild(text);
+    if (options.actions) {
+      const actionsWrap = el('div', 'l4p-card-actions');
+      actionsWrap.appendChild(options.actions);
+      header.appendChild(actionsWrap);
+    }
+    card.appendChild(header);
     return card;
   }
 
   function taskSummary(task) {
-    const block = el('div', 'l4p-task');
-    block.appendChild(el('strong', null, task.title));
+    const block = el('div', 'l4p-task-summary');
+    block.appendChild(
+      el('div', 'l4p-task-summary-header', [
+        el('strong', null, task.title),
+        el('span', `l4p-status-chip status-${task.status}`, statusLabel(task.status)),
+      ])
+    );
     if (task.description) {
-      block.appendChild(el('p', null, truncate(task.description, 140)));
+      block.appendChild(el('p', null, truncate(task.description, 120)));
     }
-    block.appendChild(el('small', null, `${statusLabel(task.status)} • Assigned to ${task.assignee_name || 'Unassigned'}`));
+    const detail = [];
+    if (task.assignee_name) {
+      detail.push(`Assigned to ${task.assignee_name}`);
+    }
+    if (task.created_by_name) {
+      detail.push(`by ${task.created_by_name}`);
+    }
+    block.appendChild(el('small', null, detail.join(' • ') || 'Unassigned'));
     return block;
   }
 
