@@ -1,0 +1,23 @@
+{
+  "name": "local-4-picnic-role-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "wp-scripts build",
+    "start": "wp-scripts start",
+    "lint": "wp-scripts lint-js"
+  },
+  "devDependencies": {
+    "@types/react": "18.2.21",
+    "@types/react-dom": "18.2.7",
+    "@wordpress/scripts": "26.7.0",
+    "playwright": "1.40.0",
+    "typescript": "5.3.3"
+  },
+  "dependencies": {
+    "chart.js": "4.4.0",
+    "classnames": "2.3.2",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  }
+}
