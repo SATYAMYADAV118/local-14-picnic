@@ -1,4 +1,140 @@
 (function () {
+  if (typeof window !== 'undefined' && !window.Chart) {
+    class L4PChart {
+      constructor(canvas, config) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.type = (config && config.type) || 'line';
+        this.config = JSON.parse(JSON.stringify(config || {}));
+        this.draw();
+      }
+
+      update(nextConfig) {
+        const merged = { ...this.config, ...(nextConfig || {}) };
+        this.config = JSON.parse(JSON.stringify(merged));
+        this.draw();
+      }
+
+      destroy() {
+        if (this.ctx) {
+          this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        }
+      }
+
+      draw() {
+        if (!this.ctx) {
+          return;
+        }
+
+        const canvas = this.ctx.canvas;
+        const width = canvas.width || canvas.clientWidth || 320;
+        const height = canvas.height || canvas.clientHeight || 240;
+        if (!canvas.width) {
+          canvas.width = width;
+        }
+        if (!canvas.height) {
+          canvas.height = height;
+        }
+
+        this.ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (this.type === 'doughnut') {
+          drawDonutChart(this.ctx, this.config);
+        } else {
+          drawLineChart(this.ctx, this.config);
+        }
+      }
+    }
+
+    function drawDonutChart(ctx, config) {
+      const dataset = (config && config.data && config.data.datasets && config.data.datasets[0]) || { data: [] };
+      const values = (dataset.data || []).map((value) => Math.max(0, Number(value) || 0));
+      const total = values.reduce((sum, value) => sum + value, 0) || 1;
+      const width = ctx.canvas.width;
+      const height = ctx.canvas.height;
+      const radius = Math.min(width, height) / 2 - 12;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      let startAngle = -Math.PI / 2;
+
+      values.forEach((value, index) => {
+        const slice = (value / total) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, startAngle + slice);
+        ctx.closePath();
+        const colors = (dataset && dataset.backgroundColor) || [];
+        ctx.fillStyle = colors[index] || '#0B5CD6';
+        ctx.fill();
+        startAngle += slice;
+      });
+
+      const innerRadius = radius * 0.65;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    }
+
+    function drawLineChart(ctx, config) {
+      const dataset = (config && config.data && config.data.datasets && config.data.datasets[0]) || { data: [] };
+      const values = (dataset.data || []).map((value) => Number(value) || 0);
+      const width = ctx.canvas.width;
+      const height = ctx.canvas.height;
+      const padding = 32;
+      const usableWidth = Math.max(1, width - padding * 2);
+      const usableHeight = Math.max(1, height - padding * 2);
+      const maxValue = Math.max(0, ...values);
+      const minValue = Math.min(0, ...values);
+      const range = Math.max(1, maxValue - minValue);
+
+      ctx.strokeStyle = '#E2E8F0';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let i = 0; i <= 4; i += 1) {
+        const y = padding + (usableHeight / 4) * i;
+        ctx.moveTo(padding, y);
+        ctx.lineTo(width - padding, y);
+      }
+      ctx.stroke();
+
+      ctx.beginPath();
+      values.forEach((value, index) => {
+        const x = padding + (usableWidth / Math.max(1, values.length - 1)) * index;
+        const normalized = (value - minValue) / range;
+        const y = padding + usableHeight - normalized * usableHeight;
+        if (index === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+      ctx.strokeStyle = dataset.borderColor || '#0B5CD6';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      if (dataset.fill) {
+        ctx.lineTo(padding + usableWidth, padding + usableHeight);
+        ctx.lineTo(padding, padding + usableHeight);
+        ctx.closePath();
+        ctx.fillStyle = dataset.backgroundColor || 'rgba(11,92,214,0.18)';
+        ctx.fill();
+      }
+
+      ctx.fillStyle = dataset.borderColor || '#0B5CD6';
+      values.forEach((value, index) => {
+        const x = padding + (usableWidth / Math.max(1, values.length - 1)) * index;
+        const normalized = (value - minValue) / range;
+        const y = padding + usableHeight - normalized * usableHeight;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    window.Chart = L4PChart;
+  }
+
   const root = document.getElementById('l4p-dashboard-root');
   if (!root) {
     return;
@@ -73,7 +209,7 @@
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'tasks', label: 'Tasks', icon: '✅' },
-    { id: 'funding', label: 'Funding', icon: '💰', cap: 'manage_l4p_tasks' },
+    { id: 'funding', label: 'Funding', icon: '💰' },
     { id: 'crew', label: 'Crew', icon: '🧑‍🤝‍🧑' },
     { id: 'community', label: 'Community', icon: '💬' },
     { id: 'notifications', label: 'Notifications', icon: '🔔' },
@@ -1164,13 +1300,7 @@
     if (chartLibraryPromise) {
       return chartLibraryPromise;
     }
-    chartLibraryPromise = new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
-      script.onload = () => resolve(window.Chart);
-      script.onerror = () => reject(new Error('Failed to load chart library'));
-      document.head.appendChild(script);
-    });
+    chartLibraryPromise = Promise.resolve(window.Chart);
     return chartLibraryPromise;
   }
 

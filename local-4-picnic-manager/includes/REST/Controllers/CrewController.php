@@ -2,8 +2,10 @@
 namespace Local4Picnic\REST\Controllers;
 
 use Local4Picnic\Services\Capabilities;
+use Local4Picnic\Services\CrewSync;
 use Local4Picnic\Services\Repositories\CrewRepository;
 use Local4Picnic\Services\Repositories\TasksRepository;
+use Local4Picnic\Utils\Settings;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -62,6 +64,19 @@ class CrewController extends BaseController {
     public function list_crew( WP_REST_Request $request ): WP_REST_Response {
         global $wpdb;
         $repo = new CrewRepository( $wpdb );
+
+        CrewSync::maybe_bootstrap();
+
+        $current_user = get_current_user_id();
+        if ( $current_user ) {
+            $settings = Settings::get();
+            if ( ! empty( $settings['auto_sync_users'] ) ) {
+                CrewSync::sync_user( (int) $current_user );
+            } else {
+                $repo->create_or_update_from_user( (int) $current_user );
+            }
+        }
+
         $list = $repo->list();
 
         return new WP_REST_Response( [ 'data' => $list ] );

@@ -2,6 +2,7 @@
 namespace Local4Picnic\REST\Controllers;
 
 use Local4Picnic\Services\CrewSync;
+use Local4Picnic\Services\Roles;
 use Local4Picnic\Utils\Settings;
 use WP_Error;
 use WP_REST_Request;
@@ -58,6 +59,8 @@ class SettingsController extends BaseController {
         ];
 
         Settings::update( $data );
+
+        Roles::sync_settings_roles();
 
         if ( $data['auto_sync_users'] ) {
             CrewSync::force_resync();
