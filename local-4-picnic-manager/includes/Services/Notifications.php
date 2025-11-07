@@ -76,8 +76,8 @@ class Notifications {
     public static function funding_event( array $tx, string $action ): void {
         self::insert(
             [
-                'title' => __( 'Funding Update', 'local-4-picnic-manager' ),
-                'body'  => sprintf( __( 'Funding transaction %s: %s %s', 'local-4-picnic-manager' ), $action, $tx['type'], $tx['amount'] ),
+                'title' => __( 'Sponsor Update', 'local-4-picnic-manager' ),
+                'body'  => sprintf( __( 'Sponsor transaction %s: %s %s', 'local-4-picnic-manager' ), $action, $tx['type'], $tx['amount'] ),
                 'type'  => 'warning',
             ]
         );
@@ -86,7 +86,7 @@ class Notifications {
     public static function funding_deleted( int $id, array $tx ): void {
         self::insert(
             [
-                'title' => __( 'Funding Removed', 'local-4-picnic-manager' ),
+                'title' => __( 'Sponsor Removed', 'local-4-picnic-manager' ),
                 'body'  => sprintf( __( 'Transaction #%d has been deleted.', 'local-4-picnic-manager' ), $id ),
                 'type'  => 'error',
             ]

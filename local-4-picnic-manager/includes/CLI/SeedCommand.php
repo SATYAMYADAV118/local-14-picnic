@@ -58,7 +58,7 @@ class SeedRunner {
 
         $funding_table = $wpdb->prefix . 'l4p_funding_tx';
         if ( $this->table_has_data( $funding_table ) && ! $force ) {
-            WP_CLI::warning( 'Funding table already contains data. Skipping funding seed (use --force to reset).' );
+            WP_CLI::warning( 'Sponsor table already contains data. Skipping sponsor seed (use --force to reset).' );
         } else {
             $this->reset_table( $funding_table, $force );
             $funds = [

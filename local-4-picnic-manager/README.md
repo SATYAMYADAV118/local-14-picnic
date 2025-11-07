@@ -8,7 +8,7 @@ Production-ready WordPress plugin delivering a premium Local Picnic operations d
 - **Roles & permissions** for `l4p_coordinator` (full control) and `l4p_volunteer` (limited with capability toggles managed in Settings).
 - **Custom data layer** via dedicated tables (`l4p_tasks`, `l4p_funding_tx`, `l4p_posts`, `l4p_comments`, `l4p_notifications`, `l4p_crew`).
 - **Secure REST API** under `/wp-json/l4p/v1` with nonce validation, capability checks, sanitised payloads, and `$wpdb->prepare` queries.
-- **Modules** covering dashboard analytics, task management with optimistic workflows, funding ledger + CSV export, crew directory/avatars, threaded community chat + moderation, notifications, and coordinator settings (branding, theme colours, timezone/currency, volunteer toggles).
+- **Modules** covering dashboard analytics, task management with optimistic workflows, sponsor ledger + CSV export, crew directory/avatars, threaded community chat + moderation, notifications, and coordinator settings (branding, theme colours, timezone/currency, volunteer toggles).
 - **Crew auto-sync** mirrors WordPress/Ultimate Member users into the crew roster with role mapping, avatars, and profile shortcuts.
 - **Branding controls** let coordinators customise the navigation title, upload an icon, and adjust primary/accent palette live.
 - **WP-CLI seeding** (`wp l4p seed`) provisions demo users (1 coordinator, 2 volunteers) with sample data.
@@ -31,7 +31,7 @@ Production-ready WordPress plugin delivering a premium Local Picnic operations d
    wp l4p seed [--force]
    ```
 
-   Creates coordinator `coordinator@local4picnic.test` (`coordinator123`) plus volunteers `victor@local4picnic.test` / `violet@local4picnic.test` with sample tasks, funding, community posts, and notifications. Pass `--force` to refresh seeded content safely.
+   Creates coordinator `coordinator@local4picnic.test` (`coordinator123`) plus volunteers `victor@local4picnic.test` / `violet@local4picnic.test` with sample tasks, sponsor entries, community posts, and notifications. Pass `--force` to refresh seeded content safely.
 
 > The dashboard bundle lives in `build/index.js`. You can customise its behaviour and styles directly—no additional tooling required. Re-run `npm run package` afterwards if you need a refreshed ZIP.
 
@@ -46,7 +46,7 @@ Add `[l4p_dashboard]` to any page. Logged-out visitors see a login prompt; authe
 | `GET /l4p/v1/tasks` | List tasks (filters: `status`, `assignee`), ordered with “my tasks” first. |
 | `POST /l4p/v1/tasks` | Create task (coordinator or volunteers if enabled). Notifications include assigner/assignee context. |
 | `POST /l4p/v1/tasks/{id}/status` | Update status (assignee or coordinator). Optimistic UI with rollback. |
-| `GET|POST|PUT|DELETE /l4p/v1/funding` | Funding CRUD with coordinator-only writes, CSV export at `/funding/export`. |
+| `GET|POST|PUT|DELETE /l4p/v1/funding` | Sponsor CRUD with coordinator-only writes, CSV export at `/funding/export`. |
 | `GET /l4p/v1/crew` | Crew roster auto-synced from WordPress users; `POST /crew/{id}/avatar` handles ≤1 MB uploads. |
 | `GET|POST /community` | Chat threads + replies with draft persistence, 15-minute delete window, moderation requests. |
 | `GET /notifications` | Timeline + badge, `POST` helpers to mark read/all. |

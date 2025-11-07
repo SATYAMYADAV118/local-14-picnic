@@ -215,7 +215,7 @@
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'tasks', label: 'Tasks', icon: '✅' },
-    { id: 'funding', label: 'Funding', icon: '💰' },
+    { id: 'funding', label: 'Sponsor', icon: '💰' },
     { id: 'crew', label: 'Crew', icon: '🧑‍🤝‍🧑' },
     { id: 'community', label: 'Community', icon: '💬' },
     { id: 'notifications', label: 'Notifications', icon: '🔔' },
@@ -1355,8 +1355,8 @@
 
   function fundingSnapshotCard() {
     const totals = state.funding.summary || { income: 0, expense: 0, net: 0 };
-    const card = cardShell('Funding Snapshot', {
-      subtitle: 'Live view of inflow vs. expenses and rolling net trend.',
+    const card = cardShell('Sponsor Snapshot', {
+      subtitle: 'Live view of sponsor inflow vs. expenses and rolling net trend.',
     });
 
     const metrics = el('div', 'l4p-metric-grid', [
@@ -1412,7 +1412,7 @@
 
   function notificationsCard() {
     const card = cardShell('Latest Notifications', {
-      subtitle: 'Stay in sync with key crew and funding updates.',
+      subtitle: 'Stay in sync with key crew and sponsor updates.',
       actions: buttonLink('Open notifications', () => {
         state.activeView = 'notifications';
         renderView();
@@ -1991,7 +1991,7 @@
         })()
       : null;
 
-    const card = cardShell('Funding overview', {
+    const card = cardShell('Sponsor overview', {
       subtitle: 'Balance income, expenses, and insights in real time.',
       actions,
     });
@@ -2059,7 +2059,7 @@
       subtitle: 'Granular list of every inflow and expense.',
     });
     if (!state.funding.data.length) {
-      card.appendChild(el('div', 'l4p-empty', 'No funding transactions yet.'));
+      card.appendChild(el('div', 'l4p-empty', 'No sponsor transactions yet.'));
       return card;
     }
 
@@ -2221,7 +2221,7 @@
         state.funding.data = state.funding.data.map((item) => (item.id === tempId ? saved : item));
       }
       state.funding.summary = calculateFundingSummary(state.funding.data);
-      showToast('Funding saved');
+      showToast('Sponsor saved');
       resetFundingForm();
       state.showFundingForm = false;
       await Promise.all([loadFunding(), loadNotifications()]);
@@ -2229,7 +2229,7 @@
     } catch (error) {
       state.funding = previous;
       renderView();
-      showToast(error.message || 'Unable to save funding', true);
+      showToast(error.message || 'Unable to save sponsor record', true);
     }
   }
 
@@ -2254,7 +2254,7 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'l4p-funding.csv';
+      link.download = 'l4p-sponsor.csv';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -2701,7 +2701,7 @@
         renderView();
       }
     } catch (error) {
-      showToast('Unable to load funding', true);
+      showToast('Unable to load sponsor data', true);
     }
   }
 

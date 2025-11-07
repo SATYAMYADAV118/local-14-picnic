@@ -21,7 +21,7 @@ class Shortcodes {
                     <div class="l4p-login-heading">
                         <span class="l4p-login-badge">Local 4 Picnic Manager</span>
                         <h2><?php echo esc_html__( 'You need to sign in', 'local-4-picnic-manager' ); ?></h2>
-                        <p><?php echo esc_html__( 'Access the crew dashboard, track funding, and collaborate with your team by signing in to your account.', 'local-4-picnic-manager' ); ?></p>
+                        <p><?php echo esc_html__( 'Access the crew dashboard, track sponsors, and collaborate with your team by signing in to your account.', 'local-4-picnic-manager' ); ?></p>
                     </div>
                     <a class="l4p-login-button" href="<?php echo esc_url( $login_url ); ?>">
                         <?php echo esc_html__( 'Go to login', 'local-4-picnic-manager' ); ?>
