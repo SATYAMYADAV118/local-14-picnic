@@ -15,8 +15,8 @@ Production-ready WordPress plugin delivering a premium Local Picnic operations d
 
 ## Installation
 
-1. Upload or symlink the plugin folder into your WordPress installation and activate **Local 4 Picnic Manager**. The production bundle ships in the `build/` directory so no compilation is required for standard deployments.
-2. (Optional) Regenerate assets after editing `assets/src/`:
+1. Upload or symlink the plugin folder into your WordPress installation and activate **Local 4 Picnic Manager**.
+2. Compile the dashboard bundle before visiting wp-admin or the `[l4p_dashboard]` shortcode:
 
    ```bash
    cd local-4-picnic-manager
@@ -24,7 +24,7 @@ Production-ready WordPress plugin delivering a premium Local Picnic operations d
    npm run build
    ```
 
-   `npm run build` uses `@wordpress/scripts`, Tailwind (via PostCSS), React, Headless UI, React Query, and Chart.js to emit `build/index.js`, `build/index.css`, and the corresponding `index.asset.php` manifest.
+   `npm run build` uses `@wordpress/scripts`, Tailwind (via PostCSS), React, Headless UI, React Query, and Chart.js to emit `build/index.js`, `build/index.css`, and the corresponding `index.asset.php` manifest. Until those files exist, authenticated users will see a guidance panel explaining that the production assets still need to be generated.
 
 3. (Optional) Package a distributable ZIP:
 
@@ -44,7 +44,7 @@ Production-ready WordPress plugin delivering a premium Local Picnic operations d
 
 ## Shortcode usage
 
-Add `[l4p_dashboard]` to any page. Logged-out visitors see a login prompt; authenticated users receive the full SPA with the same capability awareness as the admin view.
+Add `[l4p_dashboard]` to any page. Logged-out visitors see a login prompt; authenticated users receive the full SPA once the assets from `npm run build` are present (otherwise a reminder card prompts administrators to compile the bundle).
 
 ## REST endpoints (selection)
 

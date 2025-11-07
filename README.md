@@ -15,9 +15,19 @@ Local 4 Picnic Manager is a WordPress plugin that gives coordinators and volunte
 ## Getting started
 
 1. Copy `local-4-picnic-manager/` into `wp-content/plugins/` (or symlink) and activate **Local 4 Picnic Manager**.
-2. Add the `[l4p_dashboard]` shortcode to any protected page or open **Local Picnic** in `wp-admin` to load the SPA.
-3. (Optional) Run `wp l4p seed [--force]` to populate demo content and accounts.
+2. Compile the dashboard bundle before visiting **Local Picnic** or embedding `[l4p_dashboard]`:
 
-Compiled assets ship in `build/`, so no build step is required unless you plan to modify the TypeScript sources under `assets/src/`. To regenerate the bundle, run `npm install && npm run build` (requires external npm registry access). Use `npm run package` to emit an installable ZIP in `dist/` if you need to distribute the plugin.
+   ```bash
+   cd wp-content/plugins/local-4-picnic-manager
+   npm install
+   npm run build
+   ```
+
+   Until those artefacts exist in `build/`, logged-in visitors will see a guidance panel instead of the SPA.
+
+3. Add the `[l4p_dashboard]` shortcode to any protected page or open **Local Picnic** in `wp-admin` to load the SPA.
+4. (Optional) Run `wp l4p seed [--force]` to populate demo content and accounts.
+
+Use `npm run package` to emit an installable ZIP in `dist/` if you need to distribute the plugin.
 
 For a deeper breakdown of endpoints, UI behaviour, and design tokens, see [`local-4-picnic-manager/README.md`](local-4-picnic-manager/README.md).
