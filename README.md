@@ -1,6 +1,6 @@
 # Local 4 Picnic Manager
 
-Local 4 Picnic Manager is a WordPress plugin that gives coordinators and volunteers a role-aware operations hub inside `wp-admin` and on any page via the `[l4p_dashboard]` shortcode. It bundles a locked-viewport dashboard, secure REST API, and custom database layer so crews can run tasks, funding, community chat, crew profiles, notifications, and settings without leaving WordPress.
+Local 4 Picnic Manager is a WordPress plugin that gives coordinators and volunteers a role-aware operations hub inside `wp-admin` and on any page via the `[l4p_dashboard]` shortcode. It bundles a locked-viewport dashboard, secure REST API, and custom database layer so crews can run tasks, funding, community chat, crew profiles, notifications, and settings without leaving WordPress – no build step required.
 
 ## Highlights
 
@@ -15,19 +15,9 @@ Local 4 Picnic Manager is a WordPress plugin that gives coordinators and volunte
 ## Getting started
 
 1. Copy `local-4-picnic-manager/` into `wp-content/plugins/` (or symlink) and activate **Local 4 Picnic Manager**.
-2. Compile the dashboard bundle before visiting **Local Picnic** or embedding `[l4p_dashboard]`:
+2. Add the `[l4p_dashboard]` shortcode to any protected page or open **Local Picnic** in `wp-admin` to load the SPA instantly.
+3. (Optional) Run `wp l4p seed [--force]` to populate demo content and accounts.
 
-   ```bash
-   cd wp-content/plugins/local-4-picnic-manager
-   npm install
-   npm run build
-   ```
-
-   Until those artefacts exist in `build/`, logged-in visitors will see a guidance panel instead of the SPA.
-
-3. Add the `[l4p_dashboard]` shortcode to any protected page or open **Local Picnic** in `wp-admin` to load the SPA.
-4. (Optional) Run `wp l4p seed [--force]` to populate demo content and accounts.
-
-Use `npm run package` to emit an installable ZIP in `dist/` if you need to distribute the plugin.
+If you want to produce a distributable ZIP, run `npm run package` from the plugin folder (Node 18+ required).
 
 For a deeper breakdown of endpoints, UI behaviour, and design tokens, see [`local-4-picnic-manager/README.md`](local-4-picnic-manager/README.md).

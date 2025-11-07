@@ -3,7 +3,7 @@
  * Plugin Name:       Local 4 Picnic Manager
  * Plugin URI:        https://local4picnic.example.com
  * Description:       Role-based operations dashboard for Local 4 Picnic crews with premium responsive UI.
- * Version:           1.1.0
+ * Version:           1.2.0
  * Author:            Local Picnic Collective
  * Author URI:        https://local4picnic.example.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'L4P_VERSION', '1.1.0' );
+define( 'L4P_VERSION', '1.2.0' );
 define( 'L4P_PLUGIN_FILE', __FILE__ );
 define( 'L4P_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'L4P_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

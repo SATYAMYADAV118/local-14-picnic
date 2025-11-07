@@ -1,29 +1,10 @@
 {
   "name": "local-4-picnic-manager",
-  "version": "1.1.0",
-  "description": "Local 4 Picnic Manager dashboard",
+  "version": "1.2.0",
   "private": true,
+  "description": "Local 4 Picnic Manager build helpers",
   "scripts": {
-    "dev": "wp-scripts start",
-    "build": "wp-scripts build",
-    "package": "npm run build && node ./scripts/package.js",
-    "clean": "rm -rf build dist"
-  },
-  "dependencies": {
-    "@headlessui/react": "^1.7.18",
-    "@tanstack/react-query": "^5.55.0",
-    "chart.js": "^4.4.4",
-    "react": "^18.2.0",
-    "react-chartjs-2": "^5.2.0",
-    "react-dom": "^18.2.0"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.66",
-    "@types/react-dom": "^18.2.22",
-    "@wordpress/scripts": "^30.7.0",
-    "autoprefixer": "^10.4.19",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.4",
-    "typescript": "^5.4.5"
+    "package": "node ./scripts/package.js",
+    "clean": "rm -rf dist"
   }
 }

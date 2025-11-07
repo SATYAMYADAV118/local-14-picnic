@@ -1,10 +1,10 @@
 # Local 4 Picnic Manager
 
-Production-ready WordPress plugin delivering a premium Local Picnic operations dashboard for coordinators and volunteers. The SPA mounts inside `wp-admin` (menu: **Local Picnic**) and via the `[l4p_dashboard]` shortcode on the front-end for authenticated members.
+Production-ready WordPress plugin delivering a premium Local Picnic operations dashboard for coordinators and volunteers. The SPA mounts inside `wp-admin` (menu: **Local Picnic**) and via the `[l4p_dashboard]` shortcode on the front-end for authenticated members, and the compiled assets ship with the plugin so it works immediately after activation.
 
 ## Features
 
-- **Viewport locked React SPA** with fixed sidebar/header, responsive breakpoints, and polished design tokens – the body never scrolls, only content regions.
+- **Viewport locked SPA** with fixed sidebar/header, responsive breakpoints, and polished design tokens – the body never scrolls, only content regions.
 - **Roles & permissions** for `l4p_coordinator` (full control) and `l4p_volunteer` (limited with capability toggles managed in Settings).
 - **Custom data layer** via dedicated tables (`l4p_tasks`, `l4p_funding_tx`, `l4p_posts`, `l4p_comments`, `l4p_notifications`, `l4p_crew`).
 - **Secure REST API** under `/wp-json/l4p/v1` with nonce validation, capability checks, sanitised payloads, and `$wpdb->prepare` queries.
@@ -16,16 +16,7 @@ Production-ready WordPress plugin delivering a premium Local Picnic operations d
 ## Installation
 
 1. Upload or symlink the plugin folder into your WordPress installation and activate **Local 4 Picnic Manager**.
-2. Compile the dashboard bundle before visiting wp-admin or the `[l4p_dashboard]` shortcode:
-
-   ```bash
-   cd local-4-picnic-manager
-   npm install
-   npm run build
-   ```
-
-   `npm run build` uses `@wordpress/scripts`, Tailwind (via PostCSS), React, Headless UI, React Query, and Chart.js to emit `build/index.js`, `build/index.css`, and the corresponding `index.asset.php` manifest. Until those files exist, authenticated users will see a guidance panel explaining that the production assets still need to be generated.
-
+2. Visit **Local Picnic** inside `wp-admin` or place `[l4p_dashboard]` on a page to load the dashboard instantly.
 3. (Optional) Package a distributable ZIP:
 
    ```bash
@@ -41,6 +32,8 @@ Production-ready WordPress plugin delivering a premium Local Picnic operations d
    ```
 
    Creates coordinator `coordinator@local4picnic.test` (`coordinator123`) plus volunteers `victor@local4picnic.test` / `violet@local4picnic.test` with sample tasks, funding, community posts, and notifications. Pass `--force` to refresh seeded content safely.
+
+> The dashboard bundle lives in `build/index.js`. You can customise its behaviour and styles directly—no additional tooling required. Re-run `npm run package` afterwards if you need a refreshed ZIP.
 
 ## Shortcode usage
 
