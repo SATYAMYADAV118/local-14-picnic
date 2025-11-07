@@ -1,6 +1,7 @@
 <?php
-namespace Local4Picnic\Services;
+namespace Local4Picnic\CLI;
 
+use Local4Picnic\Services\CrewSync;
 use WP_CLI;
 use WP_CLI_Command;
 

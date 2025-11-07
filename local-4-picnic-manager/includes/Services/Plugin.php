@@ -2,6 +2,7 @@
 namespace Local4Picnic\Services;
 
 use Local4Picnic\Admin\AdminApp;
+use Local4Picnic\CLI\SeedCommand;
 use Local4Picnic\REST\Router;
 class Plugin {
     public static function init(): void {
