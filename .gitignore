@@ -1,0 +1,5 @@
+node_modules/
+local-4-picnic-manager/node_modules/
+local-4-picnic-manager/dist/
+local-4-picnic-manager/assets/src/**/*.css.map
+.DS_Store
