@@ -1286,6 +1286,11 @@
     if (boot.currentUser && boot.currentUser.logoutUrl) {
       const logout = el('a', 'l4p-logout-btn', 'Logout', { href: boot.currentUser.logoutUrl });
       logout.setAttribute('role', 'button');
+      logout.addEventListener('click', () => {
+        if (logout.href) {
+          window.location.assign(logout.href);
+        }
+      });
       controls.appendChild(logout);
     }
     header.appendChild(controls);
