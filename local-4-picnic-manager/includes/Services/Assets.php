@@ -91,6 +91,7 @@ class Assets {
             'roles'  => $user->roles,
             'caps'   => array_keys( array_filter( (array) $user->allcaps ) ),
             'avatar' => get_avatar_url( $user->ID ),
+            'logoutUrl' => wp_logout_url( home_url( '/' ) ),
         ];
     }
 }

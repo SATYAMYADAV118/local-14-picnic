@@ -189,6 +189,7 @@
     },
     toasts: [],
     charts: {},
+    sidebarOpen: false,
   };
 
   const caps = new Set((boot.currentUser && boot.currentUser.caps) || []);
@@ -202,9 +203,14 @@
   const sidebar = el('aside', 'l4p-sidebar');
   const header = el('header', 'l4p-header');
   const content = el('main', 'l4p-content');
+  const main = el('div', 'l4p-main', [header, content]);
+  const overlay = el('button', 'l4p-sidebar-overlay');
+  overlay.type = 'button';
+  overlay.tabIndex = -1;
+  overlay.setAttribute('aria-label', 'Close navigation');
   const toastHost = el('div', 'l4p-toast-host');
   root.appendChild(app);
-  app.append(sidebar, el('div', 'l4p-main', [header, content]), toastHost);
+  app.append(sidebar, main, overlay, toastHost);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -220,6 +226,42 @@
     }
     return caps.has(item.cap);
   });
+
+  function updateSidebarVisibility() {
+    const mobile = window.matchMedia('(max-width: 1023px)').matches;
+    if (!mobile) {
+      sidebar.dataset.open = 'true';
+      overlay.dataset.open = 'false';
+      document.body.classList.remove('l4p-lock');
+      return;
+    }
+    sidebar.dataset.open = state.sidebarOpen ? 'true' : 'false';
+    overlay.dataset.open = state.sidebarOpen ? 'true' : 'false';
+    if (state.sidebarOpen) {
+      document.body.classList.add('l4p-lock');
+    } else {
+      document.body.classList.remove('l4p-lock');
+    }
+  }
+
+  function setSidebarOpen(open) {
+    state.sidebarOpen = Boolean(open);
+    updateSidebarVisibility();
+    const toggleButton = header.querySelector('.l4p-nav-toggle');
+    if (toggleButton) {
+      toggleButton.dataset.active = window.matchMedia('(max-width: 1023px)').matches && state.sidebarOpen ? 'true' : 'false';
+    }
+  }
+
+  overlay.addEventListener('click', () => setSidebarOpen(false));
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      setSidebarOpen(false);
+    }
+  });
+
+  window.addEventListener('resize', updateSidebarVisibility);
+  updateSidebarVisibility();
 
   const logo = el('div', 'l4p-logo');
   function renderBranding() {
@@ -259,6 +301,9 @@
         state.activeView = item.id;
         updateNavigation();
         renderView();
+      }
+      if (window.matchMedia('(max-width: 1023px)').matches) {
+        setSidebarOpen(false);
       }
     });
     nav.appendChild(button);
@@ -324,7 +369,8 @@
         --l4p-warning: #F59E0B;
         --l4p-danger: #EF4444;
         --l4p-text: #0f172a;
-        font-family: 'Inter', 'Segoe UI', sans-serif;
+        --l4p-font-sans: 'Inter var', 'Inter', 'Plus Jakarta Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+        font-family: var(--l4p-font-sans);
       }
       .l4p-viewport, .l4p-wrap {
         width: 100%;
@@ -333,11 +379,18 @@
         padding: 0;
         background: var(--l4p-bg);
       }
+      body.l4p-lock {
+        overflow: hidden;
+      }
       .l4p-app {
         display: grid;
         grid-template-columns: 260px 1fr;
         min-height: 100vh;
         background: var(--l4p-bg);
+        font-family: var(--l4p-font-sans);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+        color: var(--l4p-text);
       }
       .l4p-sidebar {
         background: linear-gradient(180deg, rgba(11,92,214,0.95), rgba(6,182,212,0.85));
@@ -363,10 +416,73 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 16px;
         box-shadow: 0 8px 20px rgba(15,23,42,0.06);
         position: sticky;
         top: 0;
         z-index: 5;
+      }
+      .l4p-header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .l4p-header-title {
+        margin: 0;
+        font-size: clamp(1.25rem, 1.5vw, 1.6rem);
+        font-weight: 700;
+        color: var(--l4p-text);
+      }
+      .l4p-header-controls {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .l4p-nav-toggle {
+        display: none;
+        border: none;
+        background: rgba(11,92,214,0.16);
+        color: var(--l4p-primary);
+        font-weight: 600;
+        border-radius: 12px;
+        padding: 10px 16px;
+        cursor: pointer;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 10px 22px rgba(11,92,214,0.16);
+        transition: background 0.2s ease, transform 0.2s ease;
+      }
+      .l4p-nav-toggle:focus-visible,
+      .l4p-logout-btn:focus-visible,
+      .l4p-nav-item:focus-visible,
+      .l4p-link-button:focus-visible,
+      .l4p-status-button:focus-visible,
+      .l4p-tab:focus-visible {
+        outline: 2px solid var(--l4p-accent);
+        outline-offset: 3px;
+      }
+      .l4p-nav-toggle:hover {
+        background: rgba(11,92,214,0.22);
+        transform: translateY(-1px);
+      }
+      .l4p-nav-toggle[data-active="true"] {
+        background: linear-gradient(135deg, rgba(11,92,214,0.9), rgba(6,182,212,0.9));
+        color: #fff;
+      }
+      .l4p-sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15,23,42,0.45);
+        border: none;
+        z-index: 7;
+      }
+      .l4p-sidebar-overlay[data-open="true"] {
+        display: block;
       }
       .l4p-user-pill {
         display: inline-flex;
@@ -386,6 +502,22 @@
         display: flex;
         align-items: center;
         gap: 14px;
+      }
+      .l4p-logout-btn {
+        border: none;
+        background: linear-gradient(135deg, rgba(11,92,214,0.92), rgba(6,182,212,0.9));
+        color: #ffffff;
+        padding: 10px 16px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: 0 14px 30px rgba(11,92,214,0.28);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .l4p-logout-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 34px rgba(11,92,214,0.32);
       }
       .l4p-logo-img {
         width: 48px;
@@ -1001,32 +1133,82 @@
         display: grid;
         gap: 10px;
       }
+      @media (max-width: 1280px) {
+        .l4p-app {
+          grid-template-columns: 240px 1fr;
+        }
+      }
       @media (max-width: 1023px) {
         .l4p-app {
           grid-template-columns: 1fr;
         }
         .l4p-sidebar {
-          flex-direction: row;
-          align-items: center;
-          justify-content: space-between;
-          padding: 18px 22px;
-          position: sticky;
+          position: fixed;
           top: 0;
-          z-index: 6;
+          left: 0;
+          bottom: 0;
+          width: min(82vw, 280px);
+          max-width: 320px;
+          transform: translateX(-110%);
+          transition: transform 0.25s ease, box-shadow 0.25s ease;
+          padding: 32px 24px;
+          z-index: 9;
+          overflow-y: auto;
+          box-shadow: 0 24px 60px rgba(15,23,42,0.28);
         }
-        .l4p-nav {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(120px,1fr));
-          gap: 6px;
+        .l4p-sidebar[data-open="true"] {
+          transform: translateX(0);
+        }
+        .l4p-nav-toggle {
+          display: inline-flex;
         }
         .l4p-main {
-          min-height: calc(100vh - 120px);
+          min-height: 100vh;
         }
         .l4p-header {
-          position: static;
+          position: sticky;
+          top: 0;
+          padding: 18px 24px;
         }
         .l4p-content {
           height: auto;
+          padding: 24px 20px 36px;
+        }
+        .l4p-nav {
+          display: grid;
+          gap: 12px;
+        }
+      }
+      @media (max-width: 767px) {
+        .l4p-sidebar {
+          width: min(88vw, 280px);
+          padding: 28px 20px;
+        }
+        .l4p-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 20px;
+        }
+        .l4p-header-controls {
+          width: 100%;
+          justify-content: flex-start;
+        }
+        .l4p-content {
+          padding: 20px 18px 32px;
+        }
+        .l4p-card {
+          padding: 20px;
+        }
+        .l4p-user-pill {
+          width: 100%;
+          justify-content: space-between;
+        }
+        .l4p-logout-btn {
+          width: 100%;
+          justify-content: center;
+        }
+        .l4p-nav-item {
+          padding: 10px 12px;
         }
       }
     `;
@@ -1074,21 +1256,39 @@
   function renderHeader() {
     header.innerHTML = '';
     const title = navItems.find((item) => item.id === state.activeView)?.label || 'Dashboard';
-    header.appendChild(el('h1', null, title));
+    const left = el('div', 'l4p-header-left');
+    const toggle = el('button', 'l4p-nav-toggle', '☰ Menu');
+    toggle.type = 'button';
+    toggle.setAttribute('aria-label', 'Toggle navigation');
+    toggle.addEventListener('click', () => {
+      if (!window.matchMedia('(max-width: 1023px)').matches) {
+        return;
+      }
+      setSidebarOpen(!state.sidebarOpen);
+    });
+    toggle.dataset.active = window.matchMedia('(max-width: 1023px)').matches && state.sidebarOpen ? 'true' : 'false';
+    left.appendChild(toggle);
+    left.appendChild(el('h1', 'l4p-header-title', title));
+    header.appendChild(left);
+
+    const controls = el('div', 'l4p-header-controls');
     if (boot.currentUser && boot.currentUser.name) {
-      const user = el('div', 'l4p-user-pill', [
-        el('span', null, boot.currentUser.name),
-      ]);
+      const user = el('div', 'l4p-user-pill', [el('span', null, boot.currentUser.name)]);
       if (boot.currentUser.avatar) {
         const avatar = el('img', null, null, { src: boot.currentUser.avatar, alt: boot.currentUser.name });
         avatar.style.width = '36px';
         avatar.style.height = '36px';
         avatar.style.borderRadius = '50%';
-        avatar.style.marginRight = '10px';
         user.prepend(avatar);
       }
-      header.appendChild(user);
+      controls.appendChild(user);
     }
+    if (boot.currentUser && boot.currentUser.logoutUrl) {
+      const logout = el('a', 'l4p-logout-btn', 'Logout', { href: boot.currentUser.logoutUrl });
+      logout.setAttribute('role', 'button');
+      controls.appendChild(logout);
+    }
+    header.appendChild(controls);
   }
 
   function renderView() {
