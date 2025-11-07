@@ -1,10 +1,10 @@
 # Local 4 Picnic – Role Dashboard
 
-Local 4 Picnic – Role Dashboard is a production-ready WordPress plugin that equips coordinators and volunteers with a premium operations hub directly on the front end. Drop a shortcode onto any protected WordPress page and the role-aware React portal appears for logged-in members, letting teams orchestrate picnic logistics, finances, crew, notifications, and community chatter from one place.
+Local 4 Picnic – Role Dashboard is a production-ready WordPress plugin that equips coordinators and volunteers with a premium operations hub inside `wp-admin`. It layers modern React UX, secure REST endpoints, custom database tables, and finely scoped capabilities so teams can orchestrate picnic logistics, finances, crew, notifications, and community chatter from one place.
 
 ## Feature highlights
 
-- **Role-aware portal** – ships a Tailwind-inspired React SPA via the `[local4picnic_dashboard]` shortcode, gated to the custom `l4p_coordinator` and `l4p_volunteer` roles (MemberPress compatible).
+- **Role-aware admin app** – ships a Tailwind-inspired React SPA under **Local Picnic** in `wp-admin`, gated to the custom `l4p_coordinator` and `l4p_volunteer` roles (MemberPress compatible).
 - **Structured data layer** – activation seeds dedicated tables (`l4p_tasks`, `l4p_funding_tx`, `l4p_posts`, `l4p_comments`, `l4p_notifications`) with indexes tuned for dashboard queries.
 - **Full CRUD REST API** – `/wp-json/l4p/v1/...` endpoints handle tasks, funding, community posts/comments, crew management, settings, notifications, and dashboard aggregates with nonce + capability enforcement.
 - **Realtime-friendly notifications** – automatic alerts fire on new members, task assignment/updates, funding transactions, and community replies. Coordinators can optionally send matching emails.
@@ -18,7 +18,7 @@ Local 4 Picnic – Role Dashboard is a production-ready WordPress plugin that eq
 1. Copy this repository into your WordPress `wp-content/plugins/` directory (e.g. `wp-content/plugins/local-4-picnic-role-dashboard`).
 2. Activate **Local 4 Picnic – Role Dashboard** from the Plugins screen. Activation registers roles and builds the required custom tables.
 3. Assign users the `l4p_coordinator` or `l4p_volunteer` role (the seed command creates demo accounts).
-4. Create or edit a WordPress page and add the `[local4picnic_dashboard]` shortcode. Logged-in coordinators receive full CRUD access while volunteers inherit read-limited experiences.
+4. Navigate to **wp-admin → Local Picnic** to launch the dashboard. Volunteers inherit read-limited experiences while coordinators receive full CRUD access.
 
 ## Developer workflow
 
@@ -48,6 +48,7 @@ The bundled `build/index.js` is authored in vanilla React for portability. TypeS
 - ✅ Settings page includes email notification toggles plus subject/body templates (`assets/src/views/SettingsView.tsx`).
 - ✅ Dashboard listens for refresh events so funding/task deletes update charts (`assets/src/views/DashboardView.tsx`).
 - ✅ Playwright suite covers coordinator/volunteer workflows and the community toggle (`tests/playwright/e2e.spec.ts`).
+- ⚠️ Bundled assets in `build/` still reference the prior UI because npm registry access is blocked in this environment; run `npm install` then `npm run build` once network access is available.
 
 ## REST endpoints
 
