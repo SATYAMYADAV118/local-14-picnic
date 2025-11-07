@@ -1,85 +1,23 @@
-# Local 4 Picnic – Role Dashboard
+# Local 4 Picnic Manager
 
-Local 4 Picnic – Role Dashboard is a production-ready WordPress plugin that equips coordinators and volunteers with a premium operations hub inside `wp-admin`. It layers modern React UX, secure REST endpoints, custom database tables, and finely scoped capabilities so teams can orchestrate picnic logistics, finances, crew, notifications, and community chatter from one place.
+Local 4 Picnic Manager is a WordPress plugin that gives coordinators and volunteers a role-aware operations hub inside `wp-admin` and on any page via the `[l4p_dashboard]` shortcode. It bundles a locked-viewport dashboard, secure REST API, and custom database layer so crews can run tasks, funding, community chat, crew profiles, notifications, and settings without leaving WordPress.
 
-## Feature highlights
+## Highlights
 
-- **Role-aware admin app** – ships a Tailwind-inspired React SPA under **Local Picnic** in `wp-admin`, gated to the custom `l4p_coordinator` and `l4p_volunteer` roles (MemberPress compatible).
-- **Structured data layer** – activation seeds dedicated tables (`l4p_tasks`, `l4p_funding_tx`, `l4p_posts`, `l4p_comments`, `l4p_notifications`) with indexes tuned for dashboard queries.
-- **Full CRUD REST API** – `/wp-json/l4p/v1/...` endpoints handle tasks, funding, community posts/comments, crew management, settings, notifications, and dashboard aggregates with nonce + capability enforcement.
-- **Realtime-friendly notifications** – automatic alerts fire on new members, task assignment/updates, funding transactions, and community replies. Coordinators can optionally send matching emails.
-- **Premium analytics** – responsive cards surface My Tasks, a Chart.js donut and 7-day trend, notification timeline, and a live mini-feed – all styled with design tokens (`primary #0B5CD6`, `success #22C55E`, `warning #F59E0B`).
-- **Crew operations** – coordinators can add/disable members, reset roles, capture skills, and bootstrap WordPress users directly from the Crew grid.
-- **Settings controls** – configure branding, colors, timezone, currency, feature toggles (volunteer posting/task creation, post images, CSV export), and email notifications without leaving the UI.
-- **Seed + tests ready** – includes a WP-CLI `wp l4p seed` command for demo data and Playwright scaffolding for happy-path automation.
+- **Premium SPA layout** – fixed sidebar + header shell that adapts across desktop and tablet widths while keeping the viewport free of page scroll.
+- **Role-driven workflows** – `l4p_coordinator` receives full CRUD control; `l4p_volunteer` has read access with optional toggles for task creation and community posting.
+- **Dedicated tables** – activation provisions `l4p_tasks`, `l4p_funding_tx`, `l4p_posts`, `l4p_comments`, `l4p_notifications`, and `l4p_crew` with indexes for fast lookups.
+- **REST namespace** – `/wp-json/l4p/v1/*` routes enforce nonces, capability callbacks, and sanitised SQL via `$wpdb->prepare`.
+- **Full module stack** – Dashboard analytics, Tasks, Funding (with CSV export and coordinator-only mutations), Crew directory + avatar upload, threaded Community feed with moderation window, Notifications centre, and Settings with branding/theme controls.
+- **WordPress user sync** – optional toggle to automatically mirror every WordPress/Ultimate Member account into the Crew module, complete with WP role mapping and quick profile links.
+- **Seed command** – `wp l4p seed` spins up demo users (1 coordinator, 2 volunteers) and realistic sample data for quick demos.
 
-## Installation
+## Getting started
 
-1. Copy this repository into your WordPress `wp-content/plugins/` directory (e.g. `wp-content/plugins/local-4-picnic-role-dashboard`).
-2. Activate **Local 4 Picnic – Role Dashboard** from the Plugins screen. Activation registers roles and builds the required custom tables.
-3. Assign users the `l4p_coordinator` or `l4p_volunteer` role (the seed command creates demo accounts).
-4. Navigate to **wp-admin → Local Picnic** to launch the dashboard. Volunteers inherit read-limited experiences while coordinators receive full CRUD access.
+1. Copy `local-4-picnic-manager/` into `wp-content/plugins/` (or symlink) and activate **Local 4 Picnic Manager**.
+2. Add the `[l4p_dashboard]` shortcode to any protected page or open **Local Picnic** in `wp-admin` to load the SPA.
+3. (Optional) Run `wp l4p seed [--force]` to populate demo content and accounts.
 
-## Developer workflow
+Compiled assets ship in `build/`, so no build step is required unless you plan to modify the TypeScript sources under `assets/src/`. To regenerate the bundle, run `npm install && npm run build` (requires external npm registry access). Use `npm run package` to emit an installable ZIP in `dist/` if you need to distribute the plugin.
 
-```bash
-# Install JS dependencies
-npm install
-
-# Run the React build (outputs to build/index.js & style-index.css)
-npm run build
-
-# Live rebuild while developing the admin app
-npm start
-
-# PHP lint helper (optional)
-find . -name "*.php" -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
-```
-
-The bundled `build/index.js` is authored in vanilla React for portability. TypeScript sources live in `assets/src/` for local iteration with `@wordpress/scripts`.
-
-## Phase 2 polish checklist
-
-- ✅ Task drawer discussion threads with local-storage drafts and role-aware delete controls (`assets/src/views/TasksView.tsx`).
-- ✅ Funding ledger supports coordinator-only delete while surfacing permission toasts for volunteers (`assets/src/views/FundingView.tsx`).
-- ✅ Community feed exposes edit/delete moderation, respects volunteer posting toggle, and preserves reply drafts (`assets/src/views/CommunityView.tsx`).
-- ✅ Notifications list supports mark-one/mark-all actions and keeps the sidebar badge in sync (`assets/src/views/NotificationsView.tsx`, `assets/src/index.tsx`).
-- ✅ Crew management captures avatars, disable flags, and surfaces badges in the grid (`assets/src/views/CrewView.tsx`).
-- ✅ Settings page includes email notification toggles plus subject/body templates (`assets/src/views/SettingsView.tsx`).
-- ✅ Dashboard listens for refresh events so funding/task deletes update charts (`assets/src/views/DashboardView.tsx`).
-- ✅ Playwright suite covers coordinator/volunteer workflows and the community toggle (`tests/playwright/e2e.spec.ts`).
-- ⚠️ Bundled assets in `build/` still reference the prior UI because npm registry access is blocked in this environment; run `npm install` then `npm run build` once network access is available.
-
-## REST endpoints
-
-All endpoints live under `https://example.com/wp-json/l4p/v1/` and require a valid nonce (`wp_create_nonce( 'wp_rest' )`) plus role capabilities:
-
-| Resource | Path | Permissions |
-| --- | --- | --- |
-| Tasks | `/tasks`, `/tasks/<id>` | Volunteers can manage their own tasks when `volunteer_create_tasks` is on; coordinators can CRUD all tasks and assignments. |
-| Funding | `/funding`, `/funding/<id>`, `/funding/export` | Coordinators manage funding; volunteers receive read-only access. |
-| Community | `/community/posts`, `/community/posts/<id>`, `/community/posts/<id>/comments`, `/community/comments/<id>` | Coordinators moderate all content; volunteers can post/reply if enabled. |
-| Notifications | `/notifications`, `/notifications/<id>/read` | Authenticated users retrieve and mark notifications. |
-| Dashboard | `/dashboard` | Aggregated snapshot powering the landing cards. |
-| Crew | `/crew`, `/crew/<id>` | Coordinators maintain roster details and roles. |
-| Settings | `/settings` | Coordinators update plugin options and email toggles. |
-
-## CLI utilities
-
-Seed demo data (roles, users, sample tasks/funding/community content) with:
-
-```bash
-wp l4p seed
-```
-
-## Testing
-
-Playwright specs live in `tests/playwright/`. Install dependencies (`npm install`) then run `npx playwright test` once your WordPress test environment is reachable. Expand the suite to cover project-specific flows.
-
-## Uninstall considerations
-
-Deactivating the plugin preserves custom tables and data for safety. Implement a bespoke uninstall routine if you need automatic cleanup of tasks, funding history, crew metadata, and notifications.
-
-## License
-
-Provided as-is for Local 4 Picnic initiatives. Customize the codebase to match your organization’s workflows and infrastructure.
+For a deeper breakdown of endpoints, UI behaviour, and design tokens, see [`local-4-picnic-manager/README.md`](local-4-picnic-manager/README.md).
